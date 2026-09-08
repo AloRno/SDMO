@@ -1,0 +1,3 @@
+- Simulated Legacy Device
+- Edge gateway
+- Cloud Service

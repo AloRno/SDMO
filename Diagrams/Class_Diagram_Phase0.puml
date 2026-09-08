@@ -1,0 +1,36 @@
+@startuml
+mainframe CD Phase 0 Baseline System
+
+class LegacyDevice {
+  - device_id: String
+  - pre_shared_key: Bytes
+  - gateway_address: String
+  + generateData(): String
+  + encryptData(payload: String): Bytes
+  + sendData(encryptedPayload: Bytes): void
+}
+
+class EdgeGateway {
+  - legacy_psk: Bytes
+  - cloud_address: String
+  - cloud_session_key: Bytes
+  + negotiateSession(): void
+  + receiveData(encryptedPayload: Bytes): void
+  + decryptData(encryptedPayload: Bytes): String
+  + reEncryptData(payload: String): Bytes
+  + forwardData(reEncryptedPayload: Bytes): void
+}
+
+class CloudService {
+  - session_keys: Map<String, Bytes>
+  - data_storage: List<String>
+  + handleSessionNegotiation(): void
+  + receiveData(encryptedPayload: Bytes): void
+  + decryptData(encryptedPayload: Bytes): String
+  + storeData(payload: String): void
+}
+
+LegacyDevice "1" --> "1" EdgeGateway : Legacy Protocol (TCP/MQTT)
+EdgeGateway "1" --> "1" CloudService : Secure TLS Tunnel
+
+@enduml

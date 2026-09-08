@@ -1,0 +1,225 @@
+{
+  "main": {
+    "id": "ddc11166debee68f",
+    "type": "split",
+    "children": [
+      {
+        "id": "83580a1405c6a01f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5785ec485f5efb81",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Notes/Steps.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Steps"
+            }
+          },
+          {
+            "id": "959e3eec9522fd40",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "IA Conversation/Phase0/2026-09-07.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "2026-09-07"
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "bac725c684b231ee",
+    "type": "split",
+    "children": [
+      {
+        "id": "35af7cae9c848e91",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d53a6432dc74c872",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "40dd75e75c7a46a1",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "908a7662b3fae8f4",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "929c4dfe6fb52c92",
+    "type": "split",
+    "children": [
+      {
+        "id": "8f6604cf6a46e84b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "53cde4b38a189d71",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "IA Conversation/Phase0/2026-09-07.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "cc9daac0ac520637",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "IA Conversation/Phase0/2026-09-07.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "fc5c93d102e3a774",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "5761dea2c0aad72a",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "cb5bbb956da403dd",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "IA Conversation/Phase0/2026-09-07.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "959e3eec9522fd40",
+  "lastOpenFiles": [
+    "Notes/System's Components.md",
+    "Notes/Questions.md",
+    "Diagrams/Class_Diagram_Phase0.puml",
+    "Diagrams/Sequence_Diagram_Second_Proposition.puml",
+    "Diagrams/Sequence_Diagram_First_Proposition.puml",
+    "Diagrams/Sequence_High_Level.puml",
+    "Diagrams/Check.puml",
+    "Diagrams/sequence_diagram_phase0 copy.puml",
+    "Diagrams/sequence_diagram_phase0.puml",
+    "Diagrams/diagram.puml",
+    "Diagrams/use_case_diagram.puml",
+    "Diagrams",
+    "IA Conversation/Phase0/2026-09-07.md",
+    "IA Conversation/Phase0/2026-09-07/interaction_1.md",
+    "Notes/Steps.md",
+    "Welcome.md"
+  ]
+}
