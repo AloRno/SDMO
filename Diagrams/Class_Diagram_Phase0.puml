@@ -2,23 +2,26 @@
 mainframe CD Phase 0 Baseline System
 
 class LegacyDevice {
-  - device_id: String
   - pre_shared_key: Bytes
-  - gateway_address: String
+  - data_buffer : List
   + generateData(): String
-  + encryptData(payload: String): Bytes
-  + sendData(encryptedPayload: Bytes): void
+  + encryptData(data: String): Bytes
+  + sendData(encrypted_data: Bytes): void
 }
 
 class EdgeGateway {
-  - legacy_psk: Bytes
-  - cloud_address: String
-  - cloud_session_key: Bytes
-  + negotiateSession(): void
-  + receiveData(encryptedPayload: Bytes): void
-  + decryptData(encryptedPayload: Bytes): String
-  + reEncryptData(payload: String): Bytes
-  + forwardData(reEncryptedPayload: Bytes): void
+  - pre_shared_key: Bytes
+  - p
+  - g 
+  - sh_private_key
+  - dh_public_key
+  - shared_secret
+  - cloud_aes_key
+  + negotiateSession(cloud_service : Cloud Service): void
+  + receiveData(legacy_device : LegacyDevice): Bytes
+  + decryptData(encryptedData : Bytes): String
+  + reEncryptData(plaintext : String): Bytes
+  + forwardData(cloud_service : CloudService, reEncryptedData : Bytes): void
 }
 
 class CloudService {
@@ -30,7 +33,7 @@ class CloudService {
   + storeData(payload: String): void
 }
 
-LegacyDevice "1" --> "1" EdgeGateway : Legacy Protocol (TCP/MQTT)
+LegacyDevice "1" --> "1" EdgeGateway
 EdgeGateway "1" --> "1" CloudService : Secure TLS Tunnel
 
 @enduml
