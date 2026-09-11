@@ -44,6 +44,12 @@ The system models a common IoT architecture consisting of three primary componen
 3. **Cloud Service**
    - The final destination for the sensor data.
    - Handles the cloud-side of the key exchange and stores/analyzes the incoming encrypted payloads.
+     
+  ### Diagrams
+  <img width="540" height="867" alt="image" src="https://github.com/user-attachments/assets/dec9abbd-daac-4215-a9f4-39eefa3bbeeb" />
+  <img width="760" height="860" alt="image" src="https://github.com/user-attachments/assets/14d04e1d-8507-4b67-891f-e00e6843666c" />
+
+
 
 ## Current Progress:
 Implementation of the Legacy System, need group review.
