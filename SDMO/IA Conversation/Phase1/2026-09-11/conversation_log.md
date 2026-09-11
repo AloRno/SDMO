@@ -58,6 +58,23 @@ For every functionality that is left Empty put a //TODO in the code, when we wil
 I have successfully implemented the Edge Gateway according to your instructions and the sequence from the class diagram. I've also recorded this latest interaction into the `conversation_log.md` inside the `IA Conversation/Phase1/2026-09-11` folder.
 You can inspect the code here: [`src/edge_gateway.py`](file:///home/g3l0/Desktop/Project_SDMO/src/edge_gateway.py). 
 
+Here is what the newly generated EdgeGateway class does:
+
+__init__(): Shares the same 32-byte pre_shared_key with the legacy device. It also dynamically generates an RSA public/private key pair representing the hard-coded RSA key.
+negotiateSession(): Left empty with a TODO pointing out that we will figure this out when we create the CloudService.
+receiveData(legacy_device): Successfully pops the encrypted data directly from the legacy_device.data_buffer.
+decryptData(encryptedData): Uses the AES-CBC mechanism to decode the payload back to the original <string><TimeStamp> data.
+reEncryptData(plaintext): Uses the generated RSA key to re-encrypt the decoded payload using standard OAEP padding.
+forwardData(reEncryptedData): Simply prints out the RSA-encrypted data in hex format along with a TODO.
+I added a testing block at the bottom so you can verify the end-to-end simulation between the legacy device and the edge gateway by running:
+
+### User Prompt 5
+Ok and let us start now with the Cloud Service.
+
+In order to keep it simple, I was thinking of implementing the connection in a way similar with the connection between the gateway and the legacy device. But I have concern about the key_negotiation part. 
+
+Moreover since an entire TLS handshake is quite complex since it includes things as CIPHERSUITE and moreover this entire thing will be repleced by the post quantum algorithm, I was thinking about implementing this key agreement as a Diffie-Hellman key exchange (the schoolbook version, that is even simpler than the one really used). Before proceeding with writing the code, tell me what you think about all of this, how can we implement a "fake TCP connection" ? 
+
 ### AI Response 5
 I have recorded your prompt in the conversation log.
 
