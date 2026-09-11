@@ -23,7 +23,7 @@ class LegacyDevice:
         timestamp = str(int(time.time()))
         
         data = f"{random_str}{timestamp}"
-        print(f"[LegacyDevice] Generated Data: {data}")
+        #print(f"[LegacyDevice] Generated Data: {data}")
         return data
 
     def encryptData(self, data: str) -> bytes:
@@ -48,7 +48,7 @@ class LegacyDevice:
         # Prepend IV to the payload so it can be decrypted later
         final_encrypted_data = iv + encrypted_payload
         
-        print(f"[LegacyDevice] Encrypted Data (hex): {final_encrypted_data.hex()}")
+      # print(f"[LegacyDevice] Encrypted Data (hex): {final_encrypted_data.hex()}")
         return final_encrypted_data
 
     def sendEncryptedData(self, encrypted_data: bytes):
@@ -56,7 +56,7 @@ class LegacyDevice:
         Puts the generated and encrypted data into a buffer (a simple list).
         """
         self.data_buffer.append(encrypted_data)
-        print(f"[LegacyDevice] Sent data to buffer. Buffer size: {len(self.data_buffer)}")
+      # print(f"[LegacyDevice] Sent data to buffer. Buffer size: {len(self.data_buffer)}")
 
 """
 Quick test to see if the above class runs

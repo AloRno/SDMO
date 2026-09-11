@@ -5,6 +5,7 @@
 * You will record every interaction between us into the folder "/SDMO/IA Conversation" according to the rules enstablished in "/SDMO/Instructions/Introduction_Session.pdf" for what concern AI Usage.
 * When I start a new conversation with you, ask me in which fase of the project we are, then record our conversation in "/SDMO/IA Conversation/Phase<number>/<CurrentDate>".
 * The obsidian vault is the my knowledgebase for this project, I will update it with all the informations that may be necessary for my purposes, when you have doubt the folder "/SDMO/Instructions" is the holy bible. Everything that i put in "SDMO/Notes" are things that i note personally. Further folder may appear, if you see new folders appear, ask for their purpose.
+* Do not read the files listed in .gitignore
 
 ## Coding Standards
 * All the eventual coding that you are required to do must be done with Python.

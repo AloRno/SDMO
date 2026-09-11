@@ -32,10 +32,10 @@ class EdgeGateway:
         
         # 2. Compute public key 'A = g^a mod p'
         self.dh_public_key = pow(self.g, self.dh_private_key, self.p)
-        print(f"[EdgeGateway] Generated DH Public Key: {str(self.dh_public_key)[:20]}...")
+      # print(f"[EdgeGateway] Generated DH Public Key: {str(self.dh_public_key)[:20]}...")
         
         # 3. Exchange keys (Simulating the network handshake)
-        print("[EdgeGateway] Initiating DH Handshake with Cloud...")
+      # print("[EdgeGateway] Initiating DH Handshake with Cloud...")
         cloud_public_key = cloud_service.negotiate_dh(self.dh_public_key)
         
         # 4. Compute shared secret 's = B^a mod p'
@@ -43,19 +43,19 @@ class EdgeGateway:
         
         # 5. Derive AES key (SHA-256 hash of the shared secret)
         self.cloud_aes_key = hashlib.sha256(str(self.shared_secret).encode()).digest()
-        print(f"[EdgeGateway] Established AES Key from DH Secret: {self.cloud_aes_key.hex()}")
+      # print(f"[EdgeGateway] Established AES Key from DH Secret: {self.cloud_aes_key.hex()}")
 
     def receiveData(self, legacy_device: LegacyDevice) -> bytes:
         """
         Must pop encryptedData from the legacy_device buffer
         """
         if not legacy_device.data_buffer:
-            print("[EdgeGateway] No data in legacy device buffer.")
+          # print("[EdgeGateway] No data in legacy device buffer.")
             return None
         
         # Pop the oldest message from the buffer (FIFO)
         encryptedData = legacy_device.data_buffer.pop(0)
-        print(f"[EdgeGateway] Received encrypted data from buffer. Buffer remaining: {len(legacy_device.data_buffer)}")
+      # print(f"[EdgeGateway] Received encrypted data from buffer. Buffer remaining: {len(legacy_device.data_buffer)}")
         return encryptedData
 
     def decryptData(self, encryptedData: bytes) -> str:
@@ -78,7 +78,7 @@ class EdgeGateway:
         data = unpadder.update(padded_data) + unpadder.finalize()
         
         plaintext = data.decode('utf-8')
-        print(f"[EdgeGateway] Decrypted Data: {plaintext}")
+      # print(f"[EdgeGateway] Decrypted Data: {plaintext}")
         return plaintext
 
     def reEncryptData(self, plaintext: str) -> bytes:
@@ -105,7 +105,7 @@ class EdgeGateway:
         # Prepend IV to the payload
         final_encrypted_data = iv + encrypted_payload
         
-        print(f"[EdgeGateway] Re-Encrypted Data (AES): {final_encrypted_data.hex()}")
+        # print(f"[EdgeGateway] Re-Encrypted Data (AES): {final_encrypted_data.hex()}")
         return final_encrypted_data
 
     def forwardData(self, cloud_service: CloudService, reEncryptedData: bytes):
@@ -113,5 +113,5 @@ class EdgeGateway:
         Forward the re-encrypted data to the cloud service.
         """
         if reEncryptedData:
-            print("[EdgeGateway] Forwarding Data to Cloud...")
+          # print("[EdgeGateway] Forwarding Data to Cloud...")
             cloud_service.receiveData(reEncryptedData)

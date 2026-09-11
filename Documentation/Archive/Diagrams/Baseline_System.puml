@@ -25,12 +25,16 @@ class EdgeGateway {
 }
 
 class CloudService {
-  - session_keys: Map<String, Bytes>
-  - data_storage: List<String>
-  + handleSessionNegotiation(): void
-  + receiveData(encryptedPayload: Bytes): void
-  + decryptData(encryptedPayload: Bytes): String
-  + storeData(payload: String): void
+  - p 
+  - g
+  - dh_private_key
+  - dh_public_key
+  - shared_secret
+  - aes_key
+  - incoming_buffer
+  + negotiate_dh(gatewaypublic_key : int): int
+  + receiveData(encrypted_data : Bytes): void
+  + processData() : String
 }
 
 LegacyDevice "1" --> "1" EdgeGateway

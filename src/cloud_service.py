@@ -28,14 +28,14 @@ class CloudService:
         
         # 2. Compute public key 'B = g^b mod p'
         self.dh_public_key = pow(self.g, self.dh_private_key, self.p)
-        print(f"[CloudService] Generated DH Public Key: {str(self.dh_public_key)[:20]}...")
+      # print(f"[CloudService] Generated DH Public Key: {str(self.dh_public_key)[:20]}...")
         
         # 3. Compute shared secret 's = A^b mod p'
         self.shared_secret = pow(gateway_public_key, self.dh_private_key, self.p)
         
         # 4. Derive AES key (SHA-256 hash of the shared secret provides exactly 32 bytes)
         self.aes_key = hashlib.sha256(str(self.shared_secret).encode()).digest()
-        print(f"[CloudService] Established AES Key from DH Secret: {self.aes_key.hex()}")
+      # print(f"[CloudService] Established AES Key from DH Secret: {self.aes_key.hex()}")
         
         return self.dh_public_key
 
@@ -44,14 +44,14 @@ class CloudService:
         Receives encrypted data from the Gateway (Simulates TCP reception).
         """
         self.incoming_buffer.append(encrypted_data)
-        print(f"[CloudService] Received data in buffer. Buffer size: {len(self.incoming_buffer)}")
+      # print(f"[CloudService] Received data in buffer. Buffer size: {len(self.incoming_buffer)}")
 
     def processData(self):
         """
         Pops the data from the buffer and decrypts it using the AES key derived from DH.
         """
         if not self.incoming_buffer:
-            print("[CloudService] No data to process.")
+          # print("[CloudService] No data to process.")
             return
 
         encrypted_data = self.incoming_buffer.pop(0)
@@ -70,8 +70,8 @@ class CloudService:
         try:
             data = unpadder.update(padded_data) + unpadder.finalize()
             plaintext = data.decode('utf-8')
-            print(f"[CloudService] Successfully Decrypted Data: {plaintext}")
+          # print(f"[CloudService] Successfully Decrypted Data: {plaintext}")
             return plaintext
         except ValueError as e:
-            print(f"[CloudService] Decryption failed! Invalid padding or corrupted data: {e}")
+          # print(f"[CloudService] Decryption failed! Invalid padding or corrupted data: {e}")
             return None
