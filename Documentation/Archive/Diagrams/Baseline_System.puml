@@ -10,30 +10,30 @@ class LegacyDevice {
 }
 
 class EdgeGateway {
-  - pre_shared_key: Bytes
-  - p
-  - g 
-  - sh_private_key
-  - dh_public_key
-  - shared_secret
-  - cloud_aes_key
-  + negotiateSession(cloud_service : Cloud Service): void
-  + receiveData(legacy_device : LegacyDevice): Bytes
-  + decryptData(encryptedData : Bytes): String
-  + reEncryptData(plaintext : String): Bytes
-  + forwardData(cloud_service : CloudService, reEncryptedData : Bytes): void
+  - pre_shared_key : Bytes
+  - p : Integer
+  - g : Integer
+  - dh_private_key : Integer
+  - dh_public_key : Integer
+  - shared_secret : Integer
+  - cloud_aes_key : Bytes
+  + negotiateSession(cloud_service : CloudService) : void
+  + receiveData(legacy_device : LegacyDevice) : Bytes
+  + decryptData(encryptedData : Bytes) : String
+  + reEncryptData(plaintext : String) : Bytes
+  + forwardData(cloud_service : CloudService, reEncryptedData : Bytes) : void
 }
 
 class CloudService {
-  - p 
-  - g
-  - dh_private_key
-  - dh_public_key
-  - shared_secret
-  - aes_key
-  - incoming_buffer
-  + negotiate_dh(gatewaypublic_key : int): int
-  + receiveData(encrypted_data : Bytes): void
+  - p : Integer
+  - g : Integer
+  - dh_private_key : Integer
+  - dh_public_key : Integer
+  - shared_secret : Integer
+  - aes_key : Bytes
+  - incoming_buffer : List
+  + negotiate_dh(gatewaypublic_key : Integer) : Integer
+  + receiveData(encrypted_data : Bytes) : void
   + processData() : String
 }
 
