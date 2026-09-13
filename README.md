@@ -52,5 +52,5 @@ The system models a common IoT architecture consisting of three primary componen
 
 
 ## Current Progress:
-Implementation of the Legacy System, need group review.
+Baseline analysis established, need to proceed with test and metrics for the legacy system
 
