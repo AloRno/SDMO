@@ -1,0 +1,1 @@
+\n--- Performance Metrics ---\nHandshake Latency (ms): 81.1568389981403\nEnd-to-End Latency (ms): 0.13342099919100292\nGateway Public Key Size (Bytes): 256\nCloud Public Key Size (Bytes): 256\nCiphertext Size (Bytes): 48\nRe-Encrypted Ciphertext Size (Bytes): 48\n
