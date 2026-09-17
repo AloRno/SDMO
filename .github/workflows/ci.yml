@@ -23,12 +23,20 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # TODO: Install dependencies (e.g., pip install -r requirements.txt)
+          pip install -r requirements.txt
 
       - name: Run tests
         run: |
-          # TODO: Execute test suite (e.g., pytest)
-          echo "Running tests (placeholder - to be added later)"
+          pytest --cov=src tests/
+          coverage report > tests/coverage.txt
+          
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-metrics-and-coverage
+          path: |
+            tests/baseline_metrics.txt
+            tests/coverage.txt
 
   build-docker:
     name: Build Docker Image
