@@ -108,9 +108,14 @@ def test_end_to_end_integration():
         "Re-Encrypted Ciphertext Size (Bytes)": reencrypted_ciphertext_size_bytes
     }
     
-    metrics_output = "\\n--- Performance Metrics ---\\n"
+    # Format as a fancy human-readable table
+    metrics_output = "\n+----------------------------------------+-------------------+\n"
+    metrics_output += f"| {'Metric':<38} | {'Value':<17} |\n"
+    metrics_output += "+========================================+===================+\n"
     for k, v in metrics.items():
-        metrics_output += f"{k}: {v}\\n"
+        v_str = f"{v:.4f}" if isinstance(v, float) else str(v)
+        metrics_output += f"| {k:<38} | {v_str:<17} |\n"
+    metrics_output += "+----------------------------------------+-------------------+\n"
         
     print(metrics_output)
     
