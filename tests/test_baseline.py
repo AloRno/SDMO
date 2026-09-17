@@ -115,7 +115,7 @@ def test_end_to_end_integration():
     print(metrics_output)
     
     # Save to a file for extraction if needed
-    with open("baseline_metrics.txt", "w") as f:
+    with open("tests/baseline_metrics.txt", "w") as f:
         f.write(metrics_output)
 
 def test_edge_cases_and_errors():
