@@ -1,5 +1,21 @@
+# Personal Notes
 SDMO/Notes
-*/__pycache__
-__pycache__
-.venv
+
+# Python
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Testing
+.coverage
+.pytest_cache/
+coverage.xml
+coverage.txt
+baseline_metrics.txt
 .coverage
