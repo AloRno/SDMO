@@ -3,6 +3,8 @@ import random
 import hashlib
 import logging
 import zlib
+import time
+import re
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
@@ -94,19 +96,34 @@ class EdgeGateway:
             gateway_logger.error(f"Dropped payload. Reason: Transit Corruption (Padding Error). Details: {e}")
             return None
 
-        # 2. Semantic Validation (Catches Hardware Malfunction)
+        # 2. Semantic Validation (Catches Hardware Malfunction & mitigates Transit Corruption)
         try:
             parts = plaintext.split('|')
             if len(parts) != 2:
                 raise ValueError("Invalid format string")
                 
             temp_str = parts[0]
+            timestamp_str = parts[1]
+            
+            # Use strict regex to ensure format wasn't subtly corrupted (e.g., non-digits slipping in)
+            if not re.match(r'^-?\d+\.\d+$', temp_str):
+                raise ValueError("Temperature format strictly violated")
+            if not re.match(r'^\d{10}$', timestamp_str):
+                raise ValueError("Timestamp format strictly violated")
+            
             temperature = float(temp_str)
+            timestamp = int(timestamp_str)
             
             # Check for physically realistic bounds
             if temperature < -30.0 or temperature > 50.0:
                  gateway_logger.error(f"Dropped payload. Reason: Hardware Malfunction. Value: {temperature}")
                  return None
+            
+            # Check for temporal realism (must not be from the future or too far in the past)
+            current_time = int(time.time())
+            if timestamp > current_time + 5 or timestamp < current_time - 15:
+                gateway_logger.error(f"Dropped payload. Reason: Invalid Timestamp (likely corruption). Value: {timestamp}")
+                return None
                  
         except Exception as e:
             gateway_logger.error(f"Dropped payload. Reason: Format Parsing Error. Details: {e}")
