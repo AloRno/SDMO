@@ -52,7 +52,4 @@ The system models a common IoT architecture consisting of three primary componen
 
 
 ## Current Progress:
-Baseline Tests Conducted, documentation creation and revision in process, enstalishing initial CI pipeline
-
----
-Test the pipeline with pull requests
+Created a draft for Baseline Tests - Report, Starting to implement new features.
