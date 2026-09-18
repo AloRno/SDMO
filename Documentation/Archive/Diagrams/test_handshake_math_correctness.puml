@@ -1,0 +1,16 @@
+@startuml test_handshake_math_correctness
+participant "Edge Gateway" as EG
+participant "Cloud Service" as CS
+
+note over EG, CS: Session Negotiation
+EG -> EG: Generate DH Key Pair
+CS -> CS: Generate DH Key Pair
+
+EG -> CS: Transmit Gateway Public Key
+CS -> EG: Transmit Cloud Public Key
+
+EG -> EG: Compute Shared Secret & Derive AES Key
+CS -> CS: Compute Shared Secret & Derive AES Key
+
+note over EG, CS: Assertion: EG.SharedSecret == CS.SharedSecret\nAssertion: EG.AESKey == CS.AESKey
+@enduml

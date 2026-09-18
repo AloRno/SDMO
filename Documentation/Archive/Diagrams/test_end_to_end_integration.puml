@@ -1,0 +1,21 @@
+@startuml test_end_to_end_integration
+participant "Legacy Sensor" as LS
+participant "Edge Gateway" as EG
+participant "Cloud Service" as CS
+
+note over EG, CS: Phase 1: Gateway-Cloud Handshake
+EG <-> CS: Negotiate Session & Derive Keys
+
+note over LS, CS: Phase 2: End-to-End Data Transfer
+LS -> LS: Generate Data
+LS -> LS: Encrypt Data (Legacy AES)
+LS -> EG: Transmit Encrypted Data
+
+EG -> EG: Decrypt Data (Legacy AES)
+EG -> EG: Re-Encrypt Data (Session AES)
+EG -> CS: Forward Re-Encrypted Data
+
+CS -> CS: Decrypt & Process Data (Session AES)
+
+note over LS, CS: Assertion: Final Cloud Data == Original Sensor Data
+@enduml
