@@ -56,12 +56,19 @@ class LegacyDevice:
       # print(f"[LegacyDevice] Encrypted Data (hex): {final_encrypted_data.hex()}")
         return final_encrypted_data
 
-    def sendEncryptedData(self, encrypted_data: bytes):
+    def sendEncryptedData(self, encrypted_data: bytes, corruption_probability: float = 0.05):
         """
         Puts the generated and encrypted data into a buffer (a simple list).
+        Occasionally simulates transit corruption by altering a byte.
         """
+        if random.random() < corruption_probability:
+            # Simulate transit corruption by flipping a bit in a random byte
+            mutable_bytes = bytearray(encrypted_data)
+            corrupt_index = random.randint(0, len(mutable_bytes) - 1)
+            mutable_bytes[corrupt_index] ^= 1
+            encrypted_data = bytes(mutable_bytes)
+            
         self.data_buffer.append(encrypted_data)
-      # print(f"[LegacyDevice] Sent data to buffer. Buffer size: {len(self.data_buffer)}")
 
 """
 Quick test to see if the above class runs
