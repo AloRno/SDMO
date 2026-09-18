@@ -13,17 +13,22 @@ class LegacyDevice:
         # Buffer to act as a simple way to "send" encrypted data
         self.data_buffer = []
 
-    def generateData(self) -> str:
+    def generateData(self, failure_probability: float = 0.1) -> str:
         """
-        Generates a short random sequence of data in the format: <string><TimeStamp>
+        Generates sensor data in the format: T:<temperature>|TS:<TimeStamp>
+        Occasionally simulates a hardware malfunction based on failure_probability. 
         """
-        # Generate a random 8-character string
-        random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-        # Get current timestamp
         timestamp = str(int(time.time()))
         
-        data = f"{random_str}{timestamp}"
-        #print(f"[LegacyDevice] Generated Data: {data}")
+        # Probabilistic approach: Check if sensor hardware is malfunctioning
+        if random.random() < failure_probability:
+            # Simulate a broken sensor returning erratic/impossible temperatures
+            temperature = round(random.uniform(-999.0, 999.0), 1)
+        else:
+            # Generate a realistic temperature (e.g., between 10.0 and 30.0 degrees Celsius)
+            temperature = round(random.uniform(10.0, 30.0), 1)
+            
+        data = f"{temperature}|{timestamp}"
         return data
 
     def encryptData(self, data: str) -> bytes:
