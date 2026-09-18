@@ -5,6 +5,7 @@ SDMO/Notes
 **/__pycache__/
 *.py[cod]
 *$py.class
+/Output_Components
 
 # Environments
 .venv/
