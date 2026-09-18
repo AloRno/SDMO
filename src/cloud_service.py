@@ -1,6 +1,8 @@
 import os
 import hashlib
 import random
+import zlib
+import time
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
@@ -17,6 +19,9 @@ class CloudService:
         self.aes_key = None
         
         self.incoming_buffer = []
+        
+        # Deadman's switch / Heartbeat property
+        self.last_healthy_reading_time = time.time()
 
     def negotiate_dh(self, gateway_public_key: int) -> int:
         """
@@ -49,29 +54,65 @@ class CloudService:
     def processData(self):
         """
         Pops the data from the buffer and decrypts it using the AES key derived from DH.
+        Validates the CRC32 checksum to guarantee transit integrity.
         """
         if not self.incoming_buffer:
-          # print("[CloudService] No data to process.")
-            return
+            return None
 
         encrypted_data = self.incoming_buffer.pop(0)
         
-        # Extract IV (first 16 bytes) and payload
         iv = encrypted_data[:16]
         payload = encrypted_data[16:]
         
-        # Initialize AES cipher in CBC mode with the derived AES key
         cipher = Cipher(algorithms.AES(self.aes_key), modes.CBC(iv), backend=default_backend())
         decryptor = cipher.decryptor()
         
-        padded_data = decryptor.update(payload) + decryptor.finalize()
-        
-        unpadder = padding.PKCS7(128).unpadder()
         try:
+            padded_data = decryptor.update(payload) + decryptor.finalize()
+            unpadder = padding.PKCS7(128).unpadder()
             data = unpadder.update(padded_data) + unpadder.finalize()
-            plaintext = data.decode('utf-8')
-          # print(f"[CloudService] Successfully Decrypted Data: {plaintext}")
-            return plaintext
+            decrypted_str = data.decode('utf-8')
         except ValueError as e:
-          # print(f"[CloudService] Decryption failed! Invalid padding or corrupted data: {e}")
+            print(f"[CloudService] ❌ Transit Corruption Detected! Decryption failed: {e}")
             return None
+
+        # Expected Format from Gateway: <temperature>|<timestamp>|<crc32_hex>
+        try:
+            parts = decrypted_str.split('|')
+            if len(parts) != 3:
+                print(f"[CloudService] ❌ Transit Corruption Detected! Missing delimiters.")
+                return None
+                
+            temp_str, ts_str, received_crc_hex = parts[0], parts[1], parts[2]
+            
+            # Reconstruct the original plaintext that the CRC was based on
+            expected_plaintext = f"{temp_str}|{ts_str}"
+            
+            # Verify CRC32 Checksum
+            calculated_crc_val = zlib.crc32(expected_plaintext.encode('utf-8')) & 0xFFFFFFFF
+            calculated_crc_hex = f"{calculated_crc_val:08x}"
+            
+            if calculated_crc_hex != received_crc_hex:
+                print(f"[CloudService] ❌ Transit Corruption Detected! Checksum mismatch.")
+                return None
+                
+            # If everything is perfect, process the data and update the heartbeat
+            # print(f"[CloudService] ✅ Successfully Decrypted and Validated Data: {expected_plaintext}")
+            self.last_healthy_reading_time = time.time()
+            return expected_plaintext
+            
+        except Exception as e:
+            print(f"[CloudService] ❌ Unexpected validation error: {e}")
+            return None
+
+    def check_sensor_health(self, timeout_seconds: int = 30):
+        """
+        Deadman's Switch method. Checks if the Cloud Service has received healthy 
+        data within the expected timeout window.
+        """
+        time_since_last = time.time() - self.last_healthy_reading_time
+        if time_since_last > timeout_seconds:
+            print(f"\n[CloudService] 🚨 CRITICAL ALARM 🚨: No healthy data received from sensor for {int(time_since_last)} seconds!")
+            print("[CloudService] Sensor may be malfunctioning or Edge Gateway dropped corrupted payloads. Please check Gateway logs.")
+            return False
+        return True

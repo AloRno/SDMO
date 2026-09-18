@@ -19,11 +19,11 @@ def test_cryptography_unit():
     gateway = EdgeGateway()
     
     # 1. Device generates and encrypts data
-    data = device.generateData()
+    data = device.generateData(0.0)
     encrypted_data = device.encryptData(data)
     
     # 2. Simulate sending over network by putting in buffer
-    device.sendEncryptedData(encrypted_data)
+    device.sendEncryptedData(encrypted_data, 0.0)
     
     # 3. Gateway retrieves data
     received_data = gateway.receiveData(device)
@@ -75,11 +75,11 @@ def test_end_to_end_integration():
     start_e2e = time.perf_counter()
     
     # Legacy Sensor operations
-    data = device.generateData()
+    data = device.generateData(0.0)
     encrypted_data = device.encryptData(data)
     ciphertext_size_bytes = len(encrypted_data)
     
-    device.sendEncryptedData(encrypted_data)
+    device.sendEncryptedData(encrypted_data, 0.0)
     
     # Gateway operations
     received_at_gateway = gateway.receiveData(device)

@@ -1,11 +1,23 @@
 import os
 import random
 import hashlib
+import logging
+import zlib
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from legacy_device import LegacyDevice
 from cloud_service import CloudService
+
+# Ensure output directory exists for local logging
+os.makedirs("Output_Components/gateway", exist_ok=True)
+
+# Configure local logger for the gateway
+gateway_logger = logging.getLogger("EdgeGateway")
+gateway_logger.setLevel(logging.ERROR)
+file_handler = logging.FileHandler("Output_Components/gateway/gateway_error.log")
+file_handler.setFormatter(logging.Formatter('[%(asctime)s] ERROR: %(message)s'))
+gateway_logger.addHandler(file_handler)
 
 class EdgeGateway:
     def __init__(self):
@@ -60,53 +72,71 @@ class EdgeGateway:
 
     def decryptData(self, encryptedData: bytes) -> str:
         """
-        Decrypt the received data from the legacy buffer (using pre_shared_key)
+        Decrypt the received data. If it was corrupted in transit, catch the error.
+        If decryption succeeds, perform semantic validation.
         """
         if not encryptedData:
             return None
             
-        # The IV is the first 16 bytes
         iv = encryptedData[:16]
         payload = encryptedData[16:]
         
         cipher = Cipher(algorithms.AES(self.pre_shared_key), modes.CBC(iv), backend=default_backend())
         decryptor = cipher.decryptor()
         
-        padded_data = decryptor.update(payload) + decryptor.finalize()
-        
-        unpadder = padding.PKCS7(128).unpadder()
-        data = unpadder.update(padded_data) + unpadder.finalize()
-        
-        plaintext = data.decode('utf-8')
-      # print(f"[EdgeGateway] Decrypted Data: {plaintext}")
+        # 1. Attempt Decryption (Catches Transit Corruption)
+        try:
+            padded_data = decryptor.update(payload) + decryptor.finalize()
+            unpadder = padding.PKCS7(128).unpadder()
+            data = unpadder.update(padded_data) + unpadder.finalize()
+            plaintext = data.decode('utf-8')
+        except ValueError as e:
+            gateway_logger.error(f"Dropped payload. Reason: Transit Corruption (Padding Error). Details: {e}")
+            return None
+
+        # 2. Semantic Validation (Catches Hardware Malfunction)
+        try:
+            parts = plaintext.split('|')
+            if len(parts) != 2:
+                raise ValueError("Invalid format string")
+                
+            temp_str = parts[0]
+            temperature = float(temp_str)
+            
+            # Check for physically realistic bounds
+            if temperature < -30.0 or temperature > 50.0:
+                 gateway_logger.error(f"Dropped payload. Reason: Hardware Malfunction. Value: {temperature}")
+                 return None
+                 
+        except Exception as e:
+            gateway_logger.error(f"Dropped payload. Reason: Format Parsing Error. Details: {e}")
+            return None
+            
+        # Data is perfectly healthy
         return plaintext
 
     def reEncryptData(self, plaintext: str) -> bytes:
         """
-        reEncrypt with the AES key derived from DH negotiation
+        Appends a CRC32 Checksum to the healthy plaintext, then encrypts it for the Cloud.
         """
         if not plaintext:
             return None
             
-        # AES block size is 128 bits (16 bytes)
+        # 3. Payload with CRC32
+        crc32_val = zlib.crc32(plaintext.encode('utf-8')) & 0xFFFFFFFF
+        crc32_hex = f"{crc32_val:08x}"
+        enhanced_payload = f"{plaintext}|{crc32_hex}"
+            
+        # 4. Re-Encrypt
         padder = padding.PKCS7(128).padder()
-        padded_data = padder.update(plaintext.encode('utf-8')) + padder.finalize()
+        padded_data = padder.update(enhanced_payload.encode('utf-8')) + padder.finalize()
 
-        # Generate a random 16-byte Initialization Vector (IV)
         iv = os.urandom(16)
-
-        # Create AES cipher using CBC mode and the negotiated DH AES key
         cipher = Cipher(algorithms.AES(self.cloud_aes_key), modes.CBC(iv), backend=default_backend())
         encryptor = cipher.encryptor()
         
-        # Encrypt the data
         encrypted_payload = encryptor.update(padded_data) + encryptor.finalize()
-
-        # Prepend IV to the payload
-        final_encrypted_data = iv + encrypted_payload
-        
-        # print(f"[EdgeGateway] Re-Encrypted Data (AES): {final_encrypted_data.hex()}")
-        return final_encrypted_data
+        return iv + encrypted_payload
 
     def forwardData(self, cloud_service: CloudService, reEncryptedData: bytes):
         """
