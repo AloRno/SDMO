@@ -6,6 +6,7 @@ import time
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
+from cryptography.exceptions import InvalidTag
 
 class CloudService:
     def __init__(self):
@@ -53,47 +54,42 @@ class CloudService:
 
     def processData(self):
         """
-        Pops the data from the buffer and decrypts it using the AES key derived from DH.
-        Validates the CRC32 checksum to guarantee transit integrity.
+        Pops the data from the buffer and decrypts it using the AES-GCM key derived from DH.
+        AES-GCM automatically guarantees transit integrity via its Authentication Tag.
         """
         if not self.incoming_buffer:
             return None
 
         encrypted_data = self.incoming_buffer.pop(0)
         
-        iv = encrypted_data[:16]
-        payload = encrypted_data[16:]
+        # Package: IV (12 bytes) + Tag (16 bytes) + Ciphertext
+        if len(encrypted_data) < 28:
+            print("[CloudService] ❌ Transit Corruption Detected! Payload too short.")
+            return None
+            
+        iv = encrypted_data[:12]
+        tag = encrypted_data[12:28]
+        payload = encrypted_data[28:]
         
-        cipher = Cipher(algorithms.AES(self.aes_key), modes.CBC(iv), backend=default_backend())
+        cipher = Cipher(algorithms.AES(self.aes_key), modes.GCM(iv, tag), backend=default_backend())
         decryptor = cipher.decryptor()
         
         try:
-            padded_data = decryptor.update(payload) + decryptor.finalize()
-            unpadder = padding.PKCS7(128).unpadder()
-            data = unpadder.update(padded_data) + unpadder.finalize()
-            decrypted_str = data.decode('utf-8')
+            # decryptor.update() and finalize() will automatically verify the tag
+            data = decryptor.update(payload) + decryptor.finalize()
+            expected_plaintext = data.decode('utf-8')
+        except InvalidTag as e:
+            print(f"[CloudService] ❌ Transit Corruption Detected! AES-GCM Tag mismatch: {e}")
+            return None
         except ValueError as e:
             print(f"[CloudService] ❌ Transit Corruption Detected! Decryption failed: {e}")
             return None
 
-        # Expected Format from Gateway: <temperature>|<timestamp>|<crc32_hex>
+        # Expected Format from Gateway: <temperature>|<timestamp>
         try:
-            parts = decrypted_str.split('|')
-            if len(parts) != 3:
+            parts = expected_plaintext.split('|')
+            if len(parts) != 2:
                 print(f"[CloudService] ❌ Transit Corruption Detected! Missing delimiters.")
-                return None
-                
-            temp_str, ts_str, received_crc_hex = parts[0], parts[1], parts[2]
-            
-            # Reconstruct the original plaintext that the CRC was based on
-            expected_plaintext = f"{temp_str}|{ts_str}"
-            
-            # Verify CRC32 Checksum
-            calculated_crc_val = zlib.crc32(expected_plaintext.encode('utf-8')) & 0xFFFFFFFF
-            calculated_crc_hex = f"{calculated_crc_val:08x}"
-            
-            if calculated_crc_hex != received_crc_hex:
-                print(f"[CloudService] ❌ Transit Corruption Detected! Checksum mismatch.")
                 return None
                 
             # If everything is perfect, process the data and update the heartbeat

@@ -134,26 +134,21 @@ class EdgeGateway:
 
     def reEncryptData(self, plaintext: str) -> bytes:
         """
-        Appends a CRC32 Checksum to the healthy plaintext, then encrypts it for the Cloud.
+        Encrypts the healthy plaintext using AES-GCM for the Cloud.
         """
         if not plaintext:
             return None
             
-        # 3. Payload with CRC32
-        crc32_val = zlib.crc32(plaintext.encode('utf-8')) & 0xFFFFFFFF
-        crc32_hex = f"{crc32_val:08x}"
-        enhanced_payload = f"{plaintext}|{crc32_hex}"
-            
-        # 4. Re-Encrypt
-        padder = padding.PKCS7(128).padder()
-        padded_data = padder.update(enhanced_payload.encode('utf-8')) + padder.finalize()
-
-        iv = os.urandom(16)
-        cipher = Cipher(algorithms.AES(self.cloud_aes_key), modes.CBC(iv), backend=default_backend())
+        # AES-GCM typically uses a 12-byte (96-bit) IV
+        iv = os.urandom(12)
+        cipher = Cipher(algorithms.AES(self.cloud_aes_key), modes.GCM(iv), backend=default_backend())
         encryptor = cipher.encryptor()
         
-        encrypted_payload = encryptor.update(padded_data) + encryptor.finalize()
-        return iv + encrypted_payload
+        encrypted_payload = encryptor.update(plaintext.encode('utf-8')) + encryptor.finalize()
+        tag = encryptor.tag
+        
+        # Package: IV (12 bytes) + Tag (16 bytes) + Ciphertext
+        return iv + tag + encrypted_payload
 
     def forwardData(self, cloud_service: CloudService, reEncryptedData: bytes):
         """

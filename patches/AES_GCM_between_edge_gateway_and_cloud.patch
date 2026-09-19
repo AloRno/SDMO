@@ -1,0 +1,123 @@
+ 
+diff --git a/src/cloud_service.py b/src/cloud_service.py
+index 0e3473d..7544548 100644
+--- a/src/cloud_service.py
++++ b/src/cloud_service.py
+@@ -6,6 +6,7 @@ import time
+ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+ from cryptography.hazmat.backends import default_backend
+ from cryptography.hazmat.primitives import padding
++from cryptography.exceptions import InvalidTag
+ 
+ class CloudService:
+     def __init__(self):
+@@ -53,49 +54,44 @@ class CloudService:
+ 
+     def processData(self):
+         """
+-        Pops the data from the buffer and decrypts it using the AES key derived from DH.
+-        Validates the CRC32 checksum to guarantee transit integrity.
++        Pops the data from the buffer and decrypts it using the AES-GCM key derived from DH.
++        AES-GCM automatically guarantees transit integrity via its Authentication Tag.
+         """
+         if not self.incoming_buffer:
+             return None
+ 
+         encrypted_data = self.incoming_buffer.pop(0)
+         
+-        iv = encrypted_data[:16]
+-        payload = encrypted_data[16:]
++        # Package: IV (12 bytes) + Tag (16 bytes) + Ciphertext
++        if len(encrypted_data) < 28:
++            print("[CloudService] ❌ Transit Corruption Detected! Payload too short.")
++            return None
++            
++        iv = encrypted_data[:12]
++        tag = encrypted_data[12:28]
++        payload = encrypted_data[28:]
+         
+-        cipher = Cipher(algorithms.AES(self.aes_key), modes.CBC(iv), backend=default_backend())
++        cipher = Cipher(algorithms.AES(self.aes_key), modes.GCM(iv, tag), backend=default_backend())
+         decryptor = cipher.decryptor()
+         
+         try:
+-            padded_data = decryptor.update(payload) + decryptor.finalize()
+-            unpadder = padding.PKCS7(128).unpadder()
+-            data = unpadder.update(padded_data) + unpadder.finalize()
+-            decrypted_str = data.decode('utf-8')
++            # decryptor.update() and finalize() will automatically verify the tag
++            data = decryptor.update(payload) + decryptor.finalize()
++            expected_plaintext = data.decode('utf-8')
++        except InvalidTag as e:
++            print(f"[CloudService] ❌ Transit Corruption Detected! AES-GCM Tag mismatch: {e}")
++            return None
+         except ValueError as e:
+             print(f"[CloudService] ❌ Transit Corruption Detected! Decryption failed: {e}")
+             return None
+ 
+-        # Expected Format from Gateway: <temperature>|<timestamp>|<crc32_hex>
++        # Expected Format from Gateway: <temperature>|<timestamp>
+         try:
+-            parts = decrypted_str.split('|')
+-            if len(parts) != 3:
++            parts = expected_plaintext.split('|')
++            if len(parts) != 2:
+                 print(f"[CloudService] ❌ Transit Corruption Detected! Missing delimiters.")
+                 return None
+                 
+-            temp_str, ts_str, received_crc_hex = parts[0], parts[1], parts[2]
+-            
+-            # Reconstruct the original plaintext that the CRC was based on
+-            expected_plaintext = f"{temp_str}|{ts_str}"
+-            
+-            # Verify CRC32 Checksum
+-            calculated_crc_val = zlib.crc32(expected_plaintext.encode('utf-8')) & 0xFFFFFFFF
+-            calculated_crc_hex = f"{calculated_crc_val:08x}"
+-            
+-            if calculated_crc_hex != received_crc_hex:
+-                print(f"[CloudService] ❌ Transit Corruption Detected! Checksum mismatch.")
+-                return None
+-                
+             # If everything is perfect, process the data and update the heartbeat
+             # print(f"[CloudService] ✅ Successfully Decrypted and Validated Data: {expected_plaintext}")
+             self.last_healthy_reading_time = time.time()
+diff --git a/src/edge_gateway.py b/src/edge_gateway.py
+index 62b8c56..eee06b3 100644
+--- a/src/edge_gateway.py
++++ b/src/edge_gateway.py
+@@ -134,26 +134,21 @@ class EdgeGateway:
+ 
+     def reEncryptData(self, plaintext: str) -> bytes:
+         """
+-        Appends a CRC32 Checksum to the healthy plaintext, then encrypts it for the Cloud.
++        Encrypts the healthy plaintext using AES-GCM for the Cloud.
+         """
+         if not plaintext:
+             return None
+             
+-        # 3. Payload with CRC32
+-        crc32_val = zlib.crc32(plaintext.encode('utf-8')) & 0xFFFFFFFF
+-        crc32_hex = f"{crc32_val:08x}"
+-        enhanced_payload = f"{plaintext}|{crc32_hex}"
+-            
+-        # 4. Re-Encrypt
+-        padder = padding.PKCS7(128).padder()
+-        padded_data = padder.update(enhanced_payload.encode('utf-8')) + padder.finalize()
+-
+-        iv = os.urandom(16)
+-        cipher = Cipher(algorithms.AES(self.cloud_aes_key), modes.CBC(iv), backend=default_backend())
++        # AES-GCM typically uses a 12-byte (96-bit) IV
++        iv = os.urandom(12)
++        cipher = Cipher(algorithms.AES(self.cloud_aes_key), modes.GCM(iv), backend=default_backend())
+         encryptor = cipher.encryptor()
+         
+-        encrypted_payload = encryptor.update(padded_data) + encryptor.finalize()
+-        return iv + encrypted_payload
++        encrypted_payload = encryptor.update(plaintext.encode('utf-8')) + encryptor.finalize()
++        tag = encryptor.tag
++        
++        # Package: IV (12 bytes) + Tag (16 bytes) + Ciphertext
++        return iv + tag + encrypted_payload
+ 
+     def forwardData(self, cloud_service: CloudService, reEncryptedData: bytes):
+         """
