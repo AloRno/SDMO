@@ -18,6 +18,9 @@ The objective of this project is to **develop**, **maintain**, and **modernize**
   * /Documentation/Archive --> Word files, old versions of the documentation.
   * /Documentation/Archive/Diagrams --> Contains the UML diagrams.
   * /Documentation/Final --> The documents that may be delivered.
+  * /Documentation/Improvements_Testing.md --> an informal document to keep track of the feature we implement and technical debt.
+  * Output_Components/ --> holds eventual .txt output of the artifacts, useful if you need to implement a feature that write to files
+  * patches/ --> when you make a change to the codebase if you digit `git diff > patches/filename.patch` you will produce a nice "git report" on the changes made, so we can use it during the documentation. Execute the command before adding the files to the staging area pls.
 
 * /SDMO/... is an obsidian notebook:
   * /SDMO/IA Conversation --> Stores logs for IA conversations since we need to document it.
@@ -44,12 +47,10 @@ The system models a common IoT architecture consisting of three primary componen
 3. **Cloud Service**
    - The final destination for the sensor data.
    - Handles the cloud-side of the key exchange and stores/analyzes the incoming encrypted payloads.
-     
-  ### Diagrams
-  <img width="540" height="867" alt="image" src="https://github.com/user-attachments/assets/dec9abbd-daac-4215-a9f4-39eefa3bbeeb" />
-  <img width="760" height="860" alt="image" src="https://github.com/user-attachments/assets/14d04e1d-8507-4b67-891f-e00e6843666c" />
+
 
 
 
 ## Current Progress:
-Created a draft for Baseline Tests - Report, Starting to implement new features.
+* Implemented Data corruption handlers.
+
