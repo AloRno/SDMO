@@ -39,4 +39,29 @@ Moreover we previously implemented CR32 for checking the integirty of the commun
 
 After this implementations the test suit is beign runned 100 times to ensure as much as statistical coverage as possible.
 
+## 2 - Message Persistence in Cloud Service (SQLite)
 
+To complete the data ingestion pipeline and provide persistent storage for the cloud backend, we introduced SQLite storage into the `CloudService` component.
+
+### Objective & Rationale
+Previously, the Cloud Service decrypted incoming payloads and kept them in-memory, but did not persist them. In edge-cloud IoT systems, sensor telemetry must be reliably stored in a database for historical queries, analytics, and audits. 
+
+Furthermore, saving data only after successful decryption and validation ensures that corrupted or tampered data does not poison the persistent database.
+
+### Implementation Details
+* **Technology:** Python's built-in `sqlite3` library (zero external dependencies, keeping the architecture simple and aligned with course instructions).
+* **Database Schema:**
+  - `id`: `INTEGER PRIMARY KEY AUTOINCREMENT`
+  - `temperature`: `REAL` (parsed numeric reading)
+  - `timestamp`: `INTEGER` (Unix timestamp)
+  - `raw_message`: `TEXT` (original plaintext string `<temperature>|<timestamp>`)
+  - `created_at`: `TIMESTAMP DEFAULT CURRENT_TIMESTAMP`
+* **CloudService Integration:**
+  - `_init_db()`: Automatically creates the database table (`CREATE TABLE IF NOT EXISTS messages`) upon service initialization. The path is configurable (`db_path="cloud_messages.db"`), enabling custom paths and clean testing environments.
+  - `save_message(message: str) -> bool`: Parses the validated payload, extracts fields, and executes parameterized SQL inserts with safe connection management.
+  - `processData()`: Automatically calls `save_message()` upon successful AES-GCM decryption and delimiter verification, ensuring only validated messages reach persistent storage.
+* **Testing & Verification:**
+  - Added automated test `test_cloud_database_persistence()` to `tests/test_baseline.py`.
+  - Verified table creation, field types, and row insertion.
+  - Verified rejection of malformed payloads.
+  - Verified end-to-end integration from Gateway re-encryption through Cloud decryption and database persistence.

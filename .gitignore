@@ -20,3 +20,7 @@ coverage.xml
 coverage.txt
 baseline_metrics.txt
 .coverage
+
+# Databases
+*.db
+*.sqlite3
