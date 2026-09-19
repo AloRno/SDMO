@@ -14,5 +14,9 @@
 * All the eventual coding that you are required to do must be done with Python.
 * For what concern the phases where you will genenrate the legacy system keep the code as simple as possible, do not rely on complex pattern. The product need to be functional but not a "real product", as stated in "SDMO/Instructions/Introduction_Session".
 
+## Best Practice
+* Remind me to pull from the main branch before pushing.
+* Remind the developer that Sensor.py cannot be changed every time it modify it in any way or tries to ask you to modify it.
+
 
 
