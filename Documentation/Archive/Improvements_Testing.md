@@ -33,5 +33,10 @@ Since the Communication between The sensor and the Gateway still relies on AES-C
 
 Moreover the time interval for withc the packet are accepted is another important element. See the last paragraph above for a description. This is also a techical debt problem of the system since we cannot safely catch all the bad packets
 
+---
+
+Moreover we previously implemented CR32 for checking the integirty of the communciation between the Edge Gateway and the Cloud Service. But this methods ensure integrity only against data-corruption in transit due to network problems, it is not a good method to check integrity for what concern intentional data tampering. For this reason the AES-CBC mechanism previously used has been substituted with a more robust AES-GCM able to enforce both confidentiality and cryptography, the 256-bit key enforce post-quantum resistence. Moreover AES-GCM ensure both integrity for what concern accidental tampering and intentional ones.
+
+After this implementations the test suit is beign runned 100 times to ensure as much as statistical coverage as possible.
 
 

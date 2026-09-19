@@ -150,10 +150,18 @@ class EdgeGateway:
         # Package: IV (12 bytes) + Tag (16 bytes) + Ciphertext
         return iv + tag + encrypted_payload
 
-    def forwardData(self, cloud_service: CloudService, reEncryptedData: bytes):
+    def forwardData(self, cloud_service: CloudService, reEncryptedData: bytes, corruption_probability: float = 0.0):
         """
         Forward the re-encrypted data to the cloud service.
+        Occasionally simulates transit corruption by altering a byte.
         """
         if reEncryptedData:
+            if random.random() < corruption_probability:
+                # Simulate transit corruption by flipping a bit in a random byte
+                mutable_bytes = bytearray(reEncryptedData)
+                corrupt_index = random.randint(0, len(mutable_bytes) - 1)
+                mutable_bytes[corrupt_index] ^= 1
+                reEncryptedData = bytes(mutable_bytes)
+                
           # print("[EdgeGateway] Forwarding Data to Cloud...")
             cloud_service.receiveData(reEncryptedData)
