@@ -1,6 +1,7 @@
 import pytest
 import sys
 import os
+import time
 
 # Add src to the path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
@@ -127,3 +128,22 @@ def test_transit_corruption_handling_edge_to_cloud():
             
     # AES-GCM should catch absolutely every bit-flip
     assert detected_corruptions == total_corruptions, f"Cloud failed to detect {total_corruptions - detected_corruptions} transit corruptions!"
+
+def test_cloud_service_deadman_switch():
+    """
+    Verifies that the Cloud Service correctly identifies when a sensor has 
+    stopped sending healthy data and successfully trips the alarm.
+    """
+    cloud = CloudService()
+    
+    # Simulate a perfectly healthy state right now
+    cloud.last_healthy_reading_time = time.time()
+    
+    # Assert that the health check passes (timeout is 30 seconds by default)
+    assert cloud.check_sensor_health() is True
+    
+    # Simulate the sensor going offline 40 seconds ago
+    cloud.last_healthy_reading_time = time.time() - 40
+    
+    # Assert that the health check now fails and sounds the alarm
+    assert cloud.check_sensor_health() is False
