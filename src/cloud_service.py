@@ -49,36 +49,18 @@ class CloudService:
         finally:
             conn.close()
 
-    def save_message(self, message: str) -> bool:
+    def save_message(self, temperature: float, timestamp: int, raw_message: str) -> bool:
         """
-        Saves a validated message (<temperature>|<timestamp>) to the SQLite database.
+        Saves a validated message to the SQLite database.
         """
-        if not message:
-            return False
-            
         try:
-            parts = message.split('|')
-            if len(parts) != 2:
-                return False
-            temperature = float(parts[0])
-            timestamp = int(parts[1])
-            
             conn = sqlite3.connect(self.db_path)
             try:
                 with conn:
                     cursor = conn.cursor()
-                    cursor.execute("""
-                        CREATE TABLE IF NOT EXISTS messages (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            temperature REAL,
-                            timestamp INTEGER,
-                            raw_message TEXT,
-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                        )
-                    """)
                     cursor.execute(
                         "INSERT INTO messages (temperature, timestamp, raw_message) VALUES (?, ?, ?)",
-                        (temperature, timestamp, message)
+                        (temperature, timestamp, raw_message)
                     )
             finally:
                 conn.close()
@@ -157,9 +139,13 @@ class CloudService:
                 
             # If everything is perfect, process the data, save to DB, and update the heartbeat
             # print(f"[CloudService] [SUCCESS] Successfully Decrypted and Validated Data: {expected_plaintext}")
+            
+            temperature = float(parts[0])
+            timestamp = int(parts[1])
+            
             self.last_healthy_reading_time = time.time()
             #Saving the entry to the SQLite DB
-            self.save_message(expected_plaintext)
+            self.save_message(temperature, timestamp, expected_plaintext)
             return expected_plaintext
             
         except Exception as e:

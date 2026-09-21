@@ -24,9 +24,7 @@ def test_cloud_database_persistence():
         cloud = CloudService(db_path=test_db)
         
         # 1. Direct save_message testing
-        assert cloud.save_message("23.5|1726759200") is True
-        assert cloud.save_message("invalid_message") is False
-        assert cloud.save_message(None) is False
+        assert cloud.save_message(23.5, 1726759200, "23.5|1726759200") is True
         
         # 2. Verify record in SQLite table
         conn = sqlite3.connect(test_db)

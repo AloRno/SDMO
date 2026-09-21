@@ -1,0 +1,101 @@
+diff --git a/Documentation/Archive/Baseline Test - Report.odt b/Documentation/Archive/Baseline Test - Report.odt
+index 1a44559..3aec6dd 100644
+Binary files a/Documentation/Archive/Baseline Test - Report.odt and b/Documentation/Archive/Baseline Test - Report.odt differ
+diff --git a/Documentation/Archive/Improvements_Testing.md b/Documentation/Archive/Improvements_Testing.md
+index abc6cce..01a5fd2 100644
+--- a/Documentation/Archive/Improvements_Testing.md
++++ b/Documentation/Archive/Improvements_Testing.md
+@@ -29,9 +29,8 @@ Then since have a 100% success rate is not feasible we must set a treshold for o
+ The probability of a message of passing throug depends also on the admitted time interval of the Edge Gateway, tighter is the interval, more probable is to spot corrupted package, if the interval is too tight good pachets may be discarded.
+ 
+ ### The technical debt
+-Since the Communication between The sensor and the Gateway still relies on AES-CBC in this part of the system the information may be subject to tampering or networks error, this represent a security problem, related to the integrity of the information, that cannot be solved unless the Sensor itself is replaced. 
++Since the Communication between The sensor and the Gateway still relies on AES-CBC in this part of the system the information may be subject to tampering or networks error, this represent an integirity problem, that cannot be solved unless the Sensor itself is replaced. 
+ 
+-Moreover the time interval for withc the packet are accepted is another important element. See the last paragraph above for a description. This is also a techical debt problem of the system since we cannot safely catch all the bad packets
+ 
+ ---
+ 
+@@ -61,7 +60,7 @@ Furthermore, saving data only after successful decryption and validation ensures
+   - `save_message(message: str) -> bool`: Parses the validated payload, extracts fields, and executes parameterized SQL inserts with safe connection management.
+   - `processData()`: Automatically calls `save_message()` upon successful AES-GCM decryption and delimiter verification, ensuring only validated messages reach persistent storage.
+ * **Testing & Verification:**
+-  - Added automated test `test_cloud_database_persistence()` to `tests/test_baseline.py`.
++  - Added automated test `test_cloud_database_persistence()` to `tests/test_databse.py`.
+   - Verified table creation, field types, and row insertion.
+   - Verified rejection of malformed payloads.
+   - Verified end-to-end integration from Gateway re-encryption through Cloud decryption and database persistence.
+diff --git a/src/cloud_service.py b/src/cloud_service.py
+index 4ecad77..23591f2 100644
+--- a/src/cloud_service.py
++++ b/src/cloud_service.py
+@@ -49,36 +49,18 @@ class CloudService:
+         finally:
+             conn.close()
+ 
+-    def save_message(self, message: str) -> bool:
++    def save_message(self, temperature: float, timestamp: int, raw_message: str) -> bool:
+         """
+-        Saves a validated message (<temperature>|<timestamp>) to the SQLite database.
++        Saves a validated message to the SQLite database.
+         """
+-        if not message:
+-            return False
+-            
+         try:
+-            parts = message.split('|')
+-            if len(parts) != 2:
+-                return False
+-            temperature = float(parts[0])
+-            timestamp = int(parts[1])
+-            
+             conn = sqlite3.connect(self.db_path)
+             try:
+                 with conn:
+                     cursor = conn.cursor()
+-                    cursor.execute("""
+-                        CREATE TABLE IF NOT EXISTS messages (
+-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+-                            temperature REAL,
+-                            timestamp INTEGER,
+-                            raw_message TEXT,
+-                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-                        )
+-                    """)
+                     cursor.execute(
+                         "INSERT INTO messages (temperature, timestamp, raw_message) VALUES (?, ?, ?)",
+-                        (temperature, timestamp, message)
++                        (temperature, timestamp, raw_message)
+                     )
+             finally:
+                 conn.close()
+@@ -157,9 +139,13 @@ class CloudService:
+                 
+             # If everything is perfect, process the data, save to DB, and update the heartbeat
+             # print(f"[CloudService] [SUCCESS] Successfully Decrypted and Validated Data: {expected_plaintext}")
++            
++            temperature = float(parts[0])
++            timestamp = int(parts[1])
++            
+             self.last_healthy_reading_time = time.time()
+             #Saving the entry to the SQLite DB
+-            self.save_message(expected_plaintext)
++            self.save_message(temperature, timestamp, expected_plaintext)
+             return expected_plaintext
+             
+         except Exception as e:
+diff --git a/tests/test_database.py b/tests/test_database.py
+index 3806d0e..114080b 100644
+--- a/tests/test_database.py
++++ b/tests/test_database.py
+@@ -24,9 +24,7 @@ def test_cloud_database_persistence():
+         cloud = CloudService(db_path=test_db)
+         
+         # 1. Direct save_message testing
+-        assert cloud.save_message("23.5|1726759200") is True
+-        assert cloud.save_message("invalid_message") is False
+-        assert cloud.save_message(None) is False
++        assert cloud.save_message(23.5, 1726759200, "23.5|1726759200") is True
+         
+         # 2. Verify record in SQLite table
+         conn = sqlite3.connect(test_db)

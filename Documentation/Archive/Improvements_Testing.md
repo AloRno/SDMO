@@ -29,9 +29,8 @@ Then since have a 100% success rate is not feasible we must set a treshold for o
 The probability of a message of passing throug depends also on the admitted time interval of the Edge Gateway, tighter is the interval, more probable is to spot corrupted package, if the interval is too tight good pachets may be discarded.
 
 ### The technical debt
-Since the Communication between The sensor and the Gateway still relies on AES-CBC in this part of the system the information may be subject to tampering or networks error, this represent a security problem, related to the integrity of the information, that cannot be solved unless the Sensor itself is replaced. 
+Since the Communication between The sensor and the Gateway still relies on AES-CBC in this part of the system the information may be subject to tampering or networks error, this represent an integirity problem, that cannot be solved unless the Sensor itself is replaced. 
 
-Moreover the time interval for withc the packet are accepted is another important element. See the last paragraph above for a description. This is also a techical debt problem of the system since we cannot safely catch all the bad packets
 
 ---
 
@@ -61,7 +60,7 @@ Furthermore, saving data only after successful decryption and validation ensures
   - `save_message(message: str) -> bool`: Parses the validated payload, extracts fields, and executes parameterized SQL inserts with safe connection management.
   - `processData()`: Automatically calls `save_message()` upon successful AES-GCM decryption and delimiter verification, ensuring only validated messages reach persistent storage.
 * **Testing & Verification:**
-  - Added automated test `test_cloud_database_persistence()` to `tests/test_baseline.py`.
+  - Added automated test `test_cloud_database_persistence()` to `tests/test_databse.py`.
   - Verified table creation, field types, and row insertion.
   - Verified rejection of malformed payloads.
   - Verified end-to-end integration from Gateway re-encryption through Cloud decryption and database persistence.
