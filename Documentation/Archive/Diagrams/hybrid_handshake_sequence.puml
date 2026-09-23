@@ -1,0 +1,56 @@
+@startuml
+mainframe Phase 2 Simulation State (Hybrid DH + ML-KEM)
+
+participant "Legacy Device\n(IoT Sensor)" as Device
+participant "Edge Gateway" as Gateway
+participant "Cloud Service" as Cloud
+
+Gateway -> Gateway: generate DH keys (A, a)
+activate Gateway
+Gateway -> Gateway: generate ML-KEM Keypair (ek, dk)
+Gateway -> Cloud: negotiateSession(Gateway DH Public Key 'A', ML-KEM 'ek')
+activate Cloud
+Cloud -> Cloud: generate DH keys (B, b)
+Cloud -> Cloud: derive DH shared secret (A^b mod p)
+Cloud -> Cloud: ML-KEM Encapsulate (ek) \n-> ML-KEM Secret & Ciphertext
+Cloud -> Cloud: generate AES Key from \n(DH Secret + ML-KEM Secret)
+Cloud --> Gateway: Cloud DH Public Key 'B', ML-KEM Ciphertext
+deactivate Cloud
+
+Gateway -> Gateway: derive DH shared secret (B^a mod p)
+Gateway -> Gateway: ML-KEM Decapsulate (dk, Ciphertext) \n-> ML-KEM Secret
+Gateway -> Gateway: generate AES Key from \n(DH Secret + ML-KEM Secret)
+
+
+Device -> Device: generateData()
+activate Device
+
+Device -> Device: encryptData(Hard-coded AES key)
+
+
+Device -> Gateway: sendData(EncryptedPayload)
+
+
+Gateway -> Gateway: pop buffer & decryptData(Legacy AES Key)
+
+
+Gateway -> Gateway: reEncryptData(DH+ML-KEM Derived AES Key)
+
+
+Gateway -> Cloud: forwardData(ReEncryptedPayload)
+activate Cloud
+
+Cloud -> Cloud: decryptData(DH+ML-KEM Derived AES Key)
+
+
+Cloud -> Cloud: processData()
+
+
+Cloud --> Gateway: Return / None
+deactivate Cloud
+
+Gateway --> Device: Return / None
+deactivate Gateway
+deactivate Device
+
+@enduml

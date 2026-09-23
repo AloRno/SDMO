@@ -1,0 +1,111 @@
+diff --git a/Documentation/Archive/Critical Evaluation and Maintenance.odt b/Documentation/Archive/Critical Evaluation and Maintenance.odt
+index c0bb3ee..e878d1a 100644
+Binary files a/Documentation/Archive/Critical Evaluation and Maintenance.odt and b/Documentation/Archive/Critical Evaluation and Maintenance.odt differ
+diff --git a/Documentation/Archive/SDMO_Project_Report_Draft.odt b/Documentation/Archive/SDMO_Project_Report_Draft.odt
+index 53346e4..9423a9d 100644
+Binary files a/Documentation/Archive/SDMO_Project_Report_Draft.odt and b/Documentation/Archive/SDMO_Project_Report_Draft.odt differ
+diff --git a/src/cloud_service.py b/src/cloud_service.py
+index 23591f2..9ad3925 100644
+--- a/src/cloud_service.py
++++ b/src/cloud_service.py
+@@ -8,6 +8,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+ from cryptography.hazmat.backends import default_backend
+ from cryptography.hazmat.primitives import padding
+ from cryptography.exceptions import InvalidTag
++from mlkem.ml_kem import ML_KEM
++from mlkem.parameter_set import ML_KEM_768
+ 
+ class CloudService:
+     def __init__(self, db_path: str = "Output_Components/cloud/cloud_messages.db"):
+@@ -69,26 +71,25 @@ class CloudService:
+             print(f"[CloudService] ❌ Failed to save message to SQLite database: {e}")
+             return False
+ 
+-    def negotiate_dh(self, gateway_public_key: int) -> int:
++    def negotiate_session(self, gateway_dh_pub: int, gateway_mlkem_ek: bytes) -> tuple[int, bytes]:
+         """
+-        Completes the Schoolbook DH handshake.
+-        Generates own keys, derives shared secret, and returns own public key.
++        Completes the Hybrid DH + ML-KEM handshake.
+         """
+-        # 1. Generate private key 'b'
++        # --- 1. DH Part ---
+         self.dh_private_key = random.SystemRandom().randint(2, self.p - 2)
+-        
+-        # 2. Compute public key 'B = g^b mod p'
+         self.dh_public_key = pow(self.g, self.dh_private_key, self.p)
+-      # print(f"[CloudService] Generated DH Public Key: {str(self.dh_public_key)[:20]}...")
++        dh_shared_secret = pow(gateway_dh_pub, self.dh_private_key, self.p)
+         
+-        # 3. Compute shared secret 's = A^b mod p'
+-        self.shared_secret = pow(gateway_public_key, self.dh_private_key, self.p)
++        # --- 2. ML-KEM Part ---
++        ml_kem = ML_KEM(parameters=ML_KEM_768)
++        mlkem_shared_secret, self.mlkem_ciphertext = ml_kem.encaps(gateway_mlkem_ek)
+         
+-        # 4. Derive AES key (SHA-256 hash of the shared secret provides exactly 32 bytes)
+-        self.aes_key = hashlib.sha256(str(self.shared_secret).encode()).digest()
+-      # print(f"[CloudService] Established AES Key from DH Secret: {self.aes_key.hex()}")
++        # --- 3. Hybrid Master Secret ---
++        # Best practice: Mix both secrets to derive the AES key
++        self.shared_secret = str(dh_shared_secret).encode() + mlkem_shared_secret
++        self.aes_key = hashlib.sha256(self.shared_secret).digest()
+         
+-        return self.dh_public_key
++        return self.dh_public_key, self.mlkem_ciphertext
+ 
+     def receiveData(self, encrypted_data: bytes):
+         """
+diff --git a/src/edge_gateway.py b/src/edge_gateway.py
+index 130ab0e..3dba7b8 100644
+--- a/src/edge_gateway.py
++++ b/src/edge_gateway.py
+@@ -10,6 +10,8 @@ from cryptography.hazmat.backends import default_backend
+ from cryptography.hazmat.primitives import padding
+ from legacy_device import LegacyDevice
+ from cloud_service import CloudService
++from mlkem.ml_kem import ML_KEM
++from mlkem.parameter_set import ML_KEM_768
+ 
+ # Ensure output directory exists for local logging
+ os.makedirs("Output_Components/gateway", exist_ok=True)
+@@ -39,25 +41,26 @@ class EdgeGateway:
+ 
+     def negotiateSession(self, cloud_service: CloudService) -> None:
+         """
+-        Negotiate a session with the Cloud Service using Diffie-Hellman
++        Negotiate a session with the Cloud Service using a Hybrid DH + ML-KEM protocol.
+         """
+-        # 1. Generate private key 'a'
++        # --- 1. DH Part ---
+         self.dh_private_key = random.SystemRandom().randint(2, self.p - 2)
+-        
+-        # 2. Compute public key 'A = g^a mod p'
+         self.dh_public_key = pow(self.g, self.dh_private_key, self.p)
+-      # print(f"[EdgeGateway] Generated DH Public Key: {str(self.dh_public_key)[:20]}...")
+         
+-        # 3. Exchange keys (Simulating the network handshake)
+-      # print("[EdgeGateway] Initiating DH Handshake with Cloud...")
+-        cloud_public_key = cloud_service.negotiate_dh(self.dh_public_key)
++        # --- 2. ML-KEM Part ---
++        ml_kem = ML_KEM(parameters=ML_KEM_768)
++        self.mlkem_ek, self.mlkem_dk = ml_kem.key_gen()
++        
++        # --- 3. Handshake ---
++        cloud_dh_pub, mlkem_ciphertext = cloud_service.negotiate_session(self.dh_public_key, self.mlkem_ek)
+         
+-        # 4. Compute shared secret 's = B^a mod p'
+-        self.shared_secret = pow(cloud_public_key, self.dh_private_key, self.p)
++        # --- 4. Derive Shared Secrets ---
++        dh_shared_secret = pow(cloud_dh_pub, self.dh_private_key, self.p)
++        mlkem_shared_secret = ml_kem.decaps(self.mlkem_dk, mlkem_ciphertext)
+         
+-        # 5. Derive AES key (SHA-256 hash of the shared secret)
+-        self.cloud_aes_key = hashlib.sha256(str(self.shared_secret).encode()).digest()
+-      # print(f"[EdgeGateway] Established AES Key from DH Secret: {self.cloud_aes_key.hex()}")
++        # --- 5. Derive AES key (Mix DH + ML-KEM) ---
++        self.shared_secret = str(dh_shared_secret).encode() + mlkem_shared_secret
++        self.cloud_aes_key = hashlib.sha256(self.shared_secret).digest()
+ 
+     def receiveData(self, legacy_device: LegacyDevice) -> bytes:
+         """
