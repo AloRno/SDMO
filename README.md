@@ -52,5 +52,5 @@ The system models a common IoT architecture consisting of three primary componen
 
 
 ## Current Progress:
-* Implemented Data corruption handlers.
+* Draft for the documentation of ML-KEM
 
