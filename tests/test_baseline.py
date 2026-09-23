@@ -67,9 +67,14 @@ def test_end_to_end_integration():
     gateway.negotiateSession(cloud)
     handshake_latency_ms = (time.perf_counter() - start_time) * 1000
     
-    # === Public Key Size Measurement ===
-    pk_size_bytes = (gateway.dh_public_key.bit_length() + 7) // 8
-    cloud_pk_size_bytes = (cloud.dh_public_key.bit_length() + 7) // 8
+    # === Handshake Payload Size Measurement ===
+    gateway_dh_size = (gateway.dh_public_key.bit_length() + 7) // 8
+    gateway_mlkem_size = len(getattr(gateway, 'mlkem_ek', b''))
+    pk_size_bytes = gateway_dh_size + gateway_mlkem_size
+    
+    cloud_dh_size = (cloud.dh_public_key.bit_length() + 7) // 8
+    cloud_mlkem_size = len(getattr(cloud, 'mlkem_ciphertext', b''))
+    cloud_pk_size_bytes = cloud_dh_size + cloud_mlkem_size
     
     # === End-to-End Latency Measurement ===
     start_e2e = time.perf_counter()
@@ -102,8 +107,12 @@ def test_end_to_end_integration():
     metrics = {
         "Handshake Latency (ms)": handshake_latency_ms,
         "End-to-End Latency (ms)": e2e_latency_ms,
-        "Gateway Public Key Size (Bytes)": pk_size_bytes,
-        "Cloud Public Key Size (Bytes)": cloud_pk_size_bytes,
+        "Gateway DH PK Size (Bytes)": gateway_dh_size,
+        "Gateway ML-KEM EK Size (Bytes)": gateway_mlkem_size,
+        "Gateway Total Payload Size (Bytes)": pk_size_bytes,
+        "Cloud DH PK Size (Bytes)": cloud_dh_size,
+        "Cloud ML-KEM CT Size (Bytes)": cloud_mlkem_size,
+        "Cloud Total Payload Size (Bytes)": cloud_pk_size_bytes,
         "Ciphertext Size (Bytes)": ciphertext_size_bytes,
         "Re-Encrypted Ciphertext Size (Bytes)": reencrypted_ciphertext_size_bytes
     }

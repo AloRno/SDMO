@@ -8,6 +8,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.exceptions import InvalidTag
+from mlkem.ml_kem import ML_KEM
+from mlkem.parameter_set import ML_KEM_768
 
 class CloudService:
     def __init__(self, db_path: str = "Output_Components/cloud/cloud_messages.db"):
@@ -69,26 +71,25 @@ class CloudService:
             print(f"[CloudService] ❌ Failed to save message to SQLite database: {e}")
             return False
 
-    def negotiate_dh(self, gateway_public_key: int) -> int:
+    def negotiate_session(self, gateway_dh_pub: int, gateway_mlkem_ek: bytes) -> tuple[int, bytes]:
         """
-        Completes the Schoolbook DH handshake.
-        Generates own keys, derives shared secret, and returns own public key.
+        Completes the Hybrid DH + ML-KEM handshake.
         """
-        # 1. Generate private key 'b'
+        # --- 1. DH Part ---
         self.dh_private_key = random.SystemRandom().randint(2, self.p - 2)
-        
-        # 2. Compute public key 'B = g^b mod p'
         self.dh_public_key = pow(self.g, self.dh_private_key, self.p)
-      # print(f"[CloudService] Generated DH Public Key: {str(self.dh_public_key)[:20]}...")
+        dh_shared_secret = pow(gateway_dh_pub, self.dh_private_key, self.p)
         
-        # 3. Compute shared secret 's = A^b mod p'
-        self.shared_secret = pow(gateway_public_key, self.dh_private_key, self.p)
+        # --- 2. ML-KEM Part ---
+        ml_kem = ML_KEM(parameters=ML_KEM_768)
+        mlkem_shared_secret, self.mlkem_ciphertext = ml_kem.encaps(gateway_mlkem_ek)
         
-        # 4. Derive AES key (SHA-256 hash of the shared secret provides exactly 32 bytes)
-        self.aes_key = hashlib.sha256(str(self.shared_secret).encode()).digest()
-      # print(f"[CloudService] Established AES Key from DH Secret: {self.aes_key.hex()}")
+        # --- 3. Hybrid Master Secret ---
+        # Best practice: Mix both secrets to derive the AES key
+        self.shared_secret = str(dh_shared_secret).encode() + mlkem_shared_secret
+        self.aes_key = hashlib.sha256(self.shared_secret).digest()
         
-        return self.dh_public_key
+        return self.dh_public_key, self.mlkem_ciphertext
 
     def receiveData(self, encrypted_data: bytes):
         """
