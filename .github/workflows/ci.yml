@@ -29,7 +29,7 @@ jobs:
         run: |
           pytest --cov=src tests/
           coverage report > tests/coverage.txt
-          
+
       - name: Upload test artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -51,5 +51,8 @@ jobs:
 
       - name: Build Docker image
         run: |
-          # TODO: Build docker image (e.g., docker build -t sdmo-system:latest .)
-          echo "Building Docker image (placeholder - to be added later)"
+          docker build -t sdmo:latest .
+
+      - name: Smoke test — run pipeline inside container
+        run: |
+          docker run --rm sdmo:latest
