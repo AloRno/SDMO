@@ -103,3 +103,7 @@ Verification Plan
 Automated Tests
 Run pytest tests/test_baseline.py to ensure the happy path remains completely unaffected.
 Run pytest tests/test_failure_handling.py to ensure the new test_transit_corruption_handling_edge_to_cloud() passes and catches 100% of AES-GCM corruptions.
+
+---
+## AI Summary of Communication
+This communication addresses security flaws in the AES-CBC implementation. It implements a 'Deadman's Switch' architecture with semantic validation on the Gateway. It also introduces probabilistic transit corruption simulations, exposing AES-CBC integrity issues, which leads to the implementation of AES-GCM for robust transit corruption detection.

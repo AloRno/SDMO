@@ -132,3 +132,8 @@ Take a look at the codebase and let me know if everything meets your expectation
 
 ### User Prompt 9
 Generate a Sequence Diagram with the same format of "/Diagrams/Sequence_Diagream_Second_Proposition" that reflect the current state of the system in order to have a graphycal representation of what is going on.
+
+
+---
+## AI Summary of Communication
+This communication details the implementation of the baseline simulation components. It covers the creation of the Legacy Device (generating and encrypting data with AES), the Edge Gateway (decrypting legacy data and re-encrypting it), and the Cloud Service. It also implements a schoolbook Diffie-Hellman key exchange simulation to establish a shared AES secret between the gateway and cloud.

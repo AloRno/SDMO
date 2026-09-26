@@ -24,3 +24,8 @@ User: moreover, when I will enventually add new tests, how will the pipeline man
 AI: Updated `SDMO/Notes/GitHub_Action_Pipeline.md` with answers regarding how the pipeline manages various combinations of pushed code and tests.
 User: let us finish the setup of the pipeline and then I would like to see how it works
 AI: Staged all changes, created a commit for the configured CI Pipeline and updated tests, and pushed the code to the remote repository.
+
+
+---
+## AI Summary of Communication
+This communication focuses on refining the CI workflow. Tasks include formatting test metrics as a human-readable table, generating coverage reports, updating the .gitignore to properly untrack __pycache__ and coverage files, and documenting the CI pipeline execution in a markdown note.

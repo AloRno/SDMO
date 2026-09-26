@@ -67,3 +67,8 @@ Since this is a work project, could you craft a README.md that can I use as "lan
 
 **AI:**
 Created a comprehensive `README.md` at the project root summarizing the project goals, the Phase 0 baseline architecture, and the diagramming work completed so far.
+
+
+---
+## AI Summary of Communication
+This communication focuses on defining the Phase 0 baseline architecture of the system. It clarifies the roles of the Legacy Device, Edge Gateway, and Cloud Service, and establishes that the system relies on symmetric encryption for the legacy device, with TLS termination at the gateway. It also includes the generation of UML use-case and class diagrams, and an initial README.

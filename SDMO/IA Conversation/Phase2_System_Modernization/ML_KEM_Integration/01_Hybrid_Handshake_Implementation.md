@@ -61,3 +61,8 @@ could you realize a sequence diagram with plant UML that describe  this new hand
 I have generated the PlantUML sequence diagram for the hybrid DH + ML-KEM handshake. You can find it in the `Documentation/Archive/Diagrams` folder at `hybrid_handshake_sequence.puml`.
 
 
+
+
+---
+## AI Summary of Communication
+This communication marks the beginning of Phase 2 modernization. It covers the integration of the ML-KEM package and the implementation of a post-quantum hybrid DH + ML-KEM key exchange scheme between the Edge Gateway and Cloud Service. It also updates tests and metrics tables to reflect the new ML-KEM payloads, and updates corresponding sequence diagrams.
