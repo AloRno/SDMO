@@ -1,3 +1,4 @@
+import os
 import sys
 import builtins
 import time
@@ -177,11 +178,17 @@ def main():
     layout = make_layout()
     
     try:
-        # Refresh 4 times a second
+        iterations = 0
         with Live(layout, console=console, refresh_per_second=4, screen=True):
             while True:
                 update_ui(layout, cloud)
                 time.sleep(0.25)
+                
+                # If running inside GitHub Actions (CI smoke test), exit gracefully after 10s
+                if os.environ.get("CI") == "true":
+                    iterations += 1
+                    if iterations >= 40:
+                        break
     except KeyboardInterrupt:
         pass
     finally:
