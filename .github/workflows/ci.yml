@@ -55,4 +55,4 @@ jobs:
 
       - name: Smoke test — run pipeline inside container
         run: |
-          docker run --rm sdmo:latest
+          docker run -e CI=true --rm sdmo:latest

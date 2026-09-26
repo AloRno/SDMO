@@ -52,5 +52,5 @@ The system models a common IoT architecture consisting of three primary componen
 
 
 ## Current Progress:
-* Draft for the documentation of ML-KEM
+* CI/CD Pipeline review, Monitoring System
 
