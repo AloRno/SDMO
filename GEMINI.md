@@ -8,6 +8,11 @@
 * Every time I start a conversation with you, with no exceptions, you will ask if I want the coversation to be recorded or not. In case of a positive answer you will procede as follow:
   * You will record every interaction between us into the folder "/SDMO/IA Conversation" according to the rules enstablished in "/SDMO/Instructions/Introduction_Session.pdf" for what concern AI Usage.
   * When I start a new conversation with you, ask me in which fase of the project we are, then record our conversation in "/SDMO/IA Conversation/Phase<number>/<CurrentDate>".
+  * You shall record the conversation in the following way: 
+    ## User prompt: 
+    <Report_User_Prompt>
+    ## AI Reply
+    <Report_AI_Reply>
 
 
 ## Coding Standards
