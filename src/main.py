@@ -12,8 +12,14 @@ from rich.table import Table
 from rich.text import Text
 from rich.console import Console
 import plotext as plt
+from prometheus_client import start_http_server, Counter, Gauge
 
 from legacy_device import LegacyDevice
+
+# Prometheus Metrics
+prom_packets = Counter("sdmo_packets_total", "Total packets processed by the Cloud")
+prom_temperature = Gauge("sdmo_temperature_celsius", "Current temperature reading")
+prom_errors = Counter("sdmo_errors_total", "Total system alarms triggered")
 from edge_gateway import EdgeGateway
 from cloud_service import CloudService
 
@@ -70,6 +76,10 @@ def cloud_thread(cloud, stop_event):
             temp_str, ts_str = result.split("|")
             temp = float(temp_str)
             
+            # Update Prometheus metrics
+            prom_packets.inc() # Increase the packet count by 1
+            prom_temperature.set(temp) # Update the gauge to the current temperature
+            
             # Update stats
             stats["count"] += 1
             stats["sum"] += temp
@@ -90,6 +100,7 @@ def cloud_thread(cloud, stop_event):
             if not alarm_active:
                 cloud.check_sensor_health(timeout_seconds=15)
                 alarm_active = True
+                prom_errors.inc()
         else:
             if alarm_active:
                 ui_print("[CloudService] [SUCCESS] Sensor health restored.")
@@ -165,6 +176,9 @@ def update_ui(layout, cloud):
 
 
 def main():
+    # Start Prometheus metrics server
+    start_http_server(8000)
+
     device = LegacyDevice()
     gateway = EdgeGateway()
     cloud = CloudService()
