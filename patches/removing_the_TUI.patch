@@ -1,0 +1,262 @@
+
+
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -2,6 +2,4 @@ pytest
+ pytest-cov
+ cryptography
+ mlkem
+-rich
+-plotext==5.2.8
+ prometheus-client
+diff --git a/src/main.py b/src/main.py
+index e79294a..8f0c1e7 100644
+--- a/src/main.py
++++ b/src/main.py
+@@ -1,58 +1,30 @@
+ import os
+ import sys
+-import builtins
+ import time
+-from datetime import datetime
+ import threading
+-import collections
+-from rich.live import Live
+-from rich.layout import Layout
+-from rich.panel import Panel
+-from rich.table import Table
+-from rich.text import Text
+-from rich.console import Console
+-import plotext as plt
++import logging
+ from prometheus_client import start_http_server, Counter, Gauge
+ 
+ from legacy_device import LegacyDevice
++from edge_gateway import EdgeGateway
++from cloud_service import CloudService
++
++# Configure basic logging for the main daemon
++logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s: %(message)s')
++logger = logging.getLogger("SDMO_Daemon")
+ 
+ # Prometheus Metrics
+ prom_packets = Counter("sdmo_packets_total", "Total packets processed by the Cloud")
+ prom_temperature = Gauge("sdmo_temperature_celsius", "Current temperature reading")
+ prom_errors = Counter("sdmo_errors_total", "Total system alarms triggered")
+-from edge_gateway import EdgeGateway
+-from cloud_service import CloudService
+-
+-# Globals for UI
+-received_data_log = collections.deque(maxlen=20)
+-temperature_history = collections.deque(maxlen=60)
+-stats = {"min": None, "max": None, "count": 0, "sum": 0.0}
+ 
+-console = Console()
+-
+-# We patch builtins.print so that prints from other threads 
+-# don't mess up the TUI, but instead go to our live log buffer.
+-def ui_print(*args, **kwargs):
+-    msg = " ".join(str(a) for a in args)
+-    if msg.strip():
+-        received_data_log.append(msg)
+-
+-builtins.print = ui_print
+-
+-"""
+-Define the behavior of Sensor in the thread
+-"""
+ def device_thread(device, stop_event):
+     while not stop_event.is_set():
+         raw_data = device.generateData(failure_probability=0.0)
+         encrypted_cbc = device.encryptData(raw_data)
+         device.sendEncryptedData(encrypted_cbc, corruption_probability=0.0)
+-        # Sleep enough to see the UI update pleasantly
+         time.sleep(1.5)
+ 
+-"""
+-Define the behavior of the Gateway in the thread
+-"""
+ def gateway_thread(gateway, device, cloud, stop_event):
+     while not stop_event.is_set():
+         received = gateway.receiveData(device)
+@@ -63,13 +35,8 @@ def gateway_thread(gateway, device, cloud, stop_event):
+                 gateway.forwardData(cloud, reencrypted)
+         time.sleep(0.5)
+ 
+-alarm_active = False
+-
+-"""
+-Define the behavior of the cloud in the thread
+-"""
+ def cloud_thread(cloud, stop_event):
+-    global alarm_active
++    alarm_active = False
+     while not stop_event.is_set():
+         result = cloud.processData()
+         if result:  
+@@ -77,115 +44,38 @@ def cloud_thread(cloud, stop_event):
+             temp = float(temp_str)
+             
+             # Update Prometheus metrics
+-            prom_packets.inc() # Increase the packet count by 1
+-            prom_temperature.set(temp) # Update the gauge to the current temperature
+-            
+-            # Update stats
+-            stats["count"] += 1
+-            stats["sum"] += temp
+-            if stats["min"] is None or temp < stats["min"]:
+-                stats["min"] = temp
+-            if stats["max"] is None or temp > stats["max"]:
+-                stats["max"] = temp
+-                
+-            temperature_history.append(temp)
+-            ts_int = int(ts_str)
+-            formatted_ts = datetime.fromtimestamp(ts_int).strftime("%d.%m.%Y | %H:%M:%S")
+-            received_data_log.append(f"Cloud Processed: temp={temp}C, {formatted_ts}")
++            prom_packets.inc()
++            prom_temperature.set(temp)
+             
+         # Deadman's switch / Health Check
+-        # We check every loop, but only trigger the alarm message once per failure incident
+         time_since = time.time() - cloud.last_healthy_reading_time
+-        if time_since > 15.0:  # 15 seconds without healthy data triggers alarm
++        if time_since > 15.0:
+             if not alarm_active:
+                 cloud.check_sensor_health(timeout_seconds=15)
+                 alarm_active = True
+                 prom_errors.inc()
++                logger.error("Sensor unreachable. Alarm active.")
+         else:
+             if alarm_active:
+-                ui_print("[CloudService] [SUCCESS] Sensor health restored.")
++                logger.info("Sensor health restored.")
+                 alarm_active = False
+                 
+         time.sleep(0.5)
+ 
+-def make_layout() -> Layout:
+-    layout = Layout(name="root")
+-    layout.split(
+-        Layout(name="header", size=3),
+-        Layout(name="main", ratio=1)
+-    )
+-    layout["main"].split_column(
+-        Layout(name="graph", ratio=3),
+-        Layout(name="bottom", ratio=2),
+-    )
+-    layout["bottom"].split_row(
+-        Layout(name="log", ratio=2),
+-        Layout(name="stats", ratio=1),
+-    )
+-    return layout
+-
+-def update_ui(layout, cloud):
+-    # Header responds to alarm state
+-    time_since = time.time() - cloud.last_healthy_reading_time
+-    if time_since > 15.0:
+-        header_text = Text("SDMO — Full Pipeline Demo [CRITICAL ALARM: SENSOR UNREACHABLE]", justify="center", style="bold white on red blink")
+-        border_color = "red"
+-    else:
+-        header_text = Text("SDMO — Full Pipeline Demo (TUI)", justify="center", style="bold cyan")
+-        border_color = "cyan"
+-        
+-    layout["header"].update(Panel(header_text))
+-    
+-    # Calculate approximate size for the plot
+-    width = console.width - 4
+-    height = ((console.height - 3) * 3 // 5) - 2
+-    if width < 20: width = 20
+-    if height < 5: height = 5
+-    
+-    # Graph using plotext
+-    plt.clf()
+-    plt.plotsize(width, height)
+-    plt.title("Live Temperature Data (°C)")
+-    plt.theme("dark")
+-    if temperature_history:
+-        plt.plot(list(temperature_history), marker="braille", color=border_color)
+-    else:
+-        plt.plot([0], marker="braille")
+-    
+-    # Build plot and pass ANSI directly to rich
+-    graph_str = plt.build()
+-    layout["graph"].update(Panel(Text.from_ansi(graph_str), title="Temperature Graph", border_style=border_color))
+-    
+-    # Log
+-    log_text = Text("\n".join(received_data_log), style="green")
+-    layout["log"].update(Panel(log_text, title="Live Incoming Data (Cloud Buffer)", border_style="green"))
+-    
+-    # Stats
+-    table = Table(show_header=False, expand=True)
+-    table.add_column("Stat", style="yellow", justify="right")
+-    table.add_column("Value", style="bold white", justify="left")
+-    if stats["count"] > 0:
+-        avg = stats["sum"] / stats["count"]
+-        table.add_row("Total Packets", str(stats["count"]))
+-        table.add_row("Average", f"{avg:.2f} °C")
+-        table.add_row("Maximum", f"{stats['max']:.2f} °C")
+-        table.add_row("Minimum", f"{stats['min']:.2f} °C")
+-    else:
+-        table.add_row("Waiting for data...", "")
+-    layout["stats"].update(Panel(table, title="Statistics", border_style="yellow"))
+-
+-
+ def main():
++    logger.info("Starting SDMO Pipeline Daemon...")
++    
+     # Start Prometheus metrics server
+     start_http_server(8000)
++    logger.info("Prometheus metrics server running on port 8000.")
+ 
+     device = LegacyDevice()
+     gateway = EdgeGateway()
+     cloud = CloudService()
+     
+-    ui_print("Negotiating session (Hybrid DH + ML-KEM)...")
++    logger.info("Negotiating session (Hybrid DH + ML-KEM)...")
+     gateway.negotiateSession(cloud)
+-    ui_print("Session negotiated successfully!")
++    logger.info("Session negotiated successfully!")
+     
+     stop_event = threading.Event()
+     
+@@ -197,24 +87,26 @@ def main():
+     t_gateway.start()
+     t_cloud.start()
+     
+-    layout = make_layout()
++    logger.info("Pipeline threads started. Running silently in the background...")
+     
+     try:
+         iterations = 0
+-        with Live(layout, console=console, refresh_per_second=4, screen=True):
+-            while True:
+-                update_ui(layout, cloud)
+-                time.sleep(0.25)
+-                
+-                # If running inside GitHub Actions (CI smoke test), exit gracefully after 10s
+-                if os.environ.get("CI") == "true":
+-                    iterations += 1
+-                    if iterations >= 40:
+-                        break
++        while True:
++            time.sleep(0.25)
++            # If running inside GitHub Actions (CI smoke test), exit gracefully after 10s
++            if os.environ.get("CI") == "true":
++                iterations += 1
++                if iterations >= 40:
++                    logger.info("CI smoke test complete. Shutting down.")
++                    break
+     except KeyboardInterrupt:
+-        pass
++        logger.info("Received KeyboardInterrupt. Shutting down.")
+     finally:
+         stop_event.set()
++        t_device.join(timeout=1.0)
++        t_gateway.join(timeout=1.0)
++        t_cloud.join(timeout=1.0)
++        logger.info("Daemon terminated cleanly.")
+         
+ if __name__ == "__main__":
+     main()
+\ No newline at end of file

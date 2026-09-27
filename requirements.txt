@@ -2,6 +2,4 @@ pytest
 pytest-cov
 cryptography
 mlkem
-rich
-plotext==5.2.8
 prometheus-client
