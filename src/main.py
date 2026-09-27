@@ -33,7 +33,9 @@ def ui_print(*args, **kwargs):
 
 builtins.print = ui_print
 
-
+"""
+Define the behavior of Sensor in the thread
+"""
 def device_thread(device, stop_event):
     while not stop_event.is_set():
         raw_data = device.generateData(failure_probability=0.0)
@@ -42,6 +44,9 @@ def device_thread(device, stop_event):
         # Sleep enough to see the UI update pleasantly
         time.sleep(1.5)
 
+"""
+Define the behavior of the Gateway in the thread
+"""
 def gateway_thread(gateway, device, cloud, stop_event):
     while not stop_event.is_set():
         received = gateway.receiveData(device)
@@ -54,6 +59,9 @@ def gateway_thread(gateway, device, cloud, stop_event):
 
 alarm_active = False
 
+"""
+Define the behavior of the cloud in the thread
+"""
 def cloud_thread(cloud, stop_event):
     global alarm_active
     while not stop_event.is_set():
