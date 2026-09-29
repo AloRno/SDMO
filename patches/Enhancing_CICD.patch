@@ -1,0 +1,39 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index cb948fb..8758b3f 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -49,10 +49,27 @@ jobs:
+       - name: Set up Docker Buildx
+         uses: docker/setup-buildx-action@v3
+ 
+-      - name: Build Docker image
++      - name: Deploy Docker Compose Stack
+         run: |
+-          docker build -t sdmo:latest .
++          docker-compose up -d --build
+ 
+-      - name: Smoke test — run pipeline inside container
++      - name: Verify Application Health
+         run: |
+-          docker run -e CI=true --rm sdmo:latest
++          echo "Waiting for sdmo-app to become healthy..."
++          for i in {1..15}; do
++            STATUS=$(docker inspect --format='{{json .State.Health.Status}}' $(docker-compose ps -q sdmo-app))
++            if [ "$STATUS" == '"healthy"' ]; then
++              echo "Application is healthy!"
++              exit 0
++            fi
++            echo "Current status: $STATUS - waiting 2 seconds..."
++            sleep 2
++          done
++          echo "Application failed to become healthy in time!"
++          docker-compose logs
++          exit 1
++
++      - name: Tear Down Stack
++        if: always()
++        run: |
++          docker-compose down
+diff --git a/Documentation/Archive/Critical Evaluation and Maintenance.odt b/Documentation/Archive/Critical Evaluation and Maintenance.odt
+index c9c59fa..07e97a1 100644
+Binary files a/Documentation/Archive/Critical Evaluation and Maintenance.odt and b/Documentation/Archive/Critical Evaluation and Maintenance.odt differ
