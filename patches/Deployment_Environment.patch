@@ -1,3 +1,22 @@
+commit ef89908608b9f1eb686e40ebd65de9af3e842987
+Author: g3l0 <angelo.rubino@mail.polimi.it>
+Date:   Sun Sep 27 16:50:09 2026 +0300
+
+    Deployment Environment
+
+diff --git a/Dockerfile b/Dockerfile
+index f3b219c..33534b3 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -19,6 +19,8 @@ RUN pip install --upgrade pip && \
+ # Lean final image — no compiler needed at runtime
+ FROM python:3.12-slim AS runtime
+ 
++RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
++
+ # Copy installed packages from build stage
+ COPY --from=builder /install /usr/local
+ 
 diff --git a/docker-compose.yml b/docker-compose.yml
 new file mode 100644
 index 0000000..c226cff
@@ -24,6 +43,51 @@ index 0000000..c226cff
 +      - ./prometheus.yml:/etc/prometheus/prometheus.yml
 +    depends_on:
 +      - sdmo-app
+diff --git a/patches/Deployment_Environment.patch b/patches/Deployment_Environment.patch
+new file mode 100644
+index 0000000..059a234
+--- /dev/null
++++ b/patches/Deployment_Environment.patch
+@@ -0,0 +1,39 @@
++diff --git a/docker-compose.yml b/docker-compose.yml
++new file mode 100644
++index 0000000..c226cff
++--- /dev/null
+++++ b/docker-compose.yml
++@@ -0,0 +1,20 @@
+++services:
+++  sdmo-app:
+++    build: .
+++    ports:
+++      - "8000:8000"
+++    healthcheck:
+++      test: ["CMD", "curl", "-f", "http://localhost:8000/metrics"]
+++      interval: 10s
+++      timeout: 5s
+++      retries: 3
+++      start_period: 5s
+++
+++  prometheus:
+++    image: prom/prometheus:latest
+++    ports:
+++      - "9090:9090"
+++    volumes:
+++      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+++    depends_on:
+++      - sdmo-app
++diff --git a/prometheus.yml b/prometheus.yml
++new file mode 100644
++index 0000000..d098d80
++--- /dev/null
+++++ b/prometheus.yml
++@@ -0,0 +1,7 @@
+++global:
+++  scrape_interval: 5s
+++
+++scrape_configs:
+++  - job_name: 'sdmo-app'
+++    static_configs:
+++      - targets: ['sdmo-app:8000']
 diff --git a/prometheus.yml b/prometheus.yml
 new file mode 100644
 index 0000000..d098d80
@@ -37,3 +101,42 @@ index 0000000..d098d80
 +  - job_name: 'sdmo-app'
 +    static_configs:
 +      - targets: ['sdmo-app:8000']
+commit b5b93f7411473e074945057e6949a5b4b4883695
+Author: g3l0 <angelo.rubino@mail.polimi.it>
+Date:   Tue Sep 29 12:57:16 2026 +0300
+
+    Fixed Docker Compose, I use an old version
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 8758b3f..efc039d 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -51,13 +51,13 @@ jobs:
+ 
+       - name: Deploy Docker Compose Stack
+         run: |
+-          docker-compose up -d --build
++          docker compose up -d --build
+ 
+       - name: Verify Application Health
+         run: |
+           echo "Waiting for sdmo-app to become healthy..."
+           for i in {1..15}; do
+-            STATUS=$(docker inspect --format='{{json .State.Health.Status}}' $(docker-compose ps -q sdmo-app))
++            STATUS=$(docker inspect --format='{{json .State.Health.Status}}' $(docker compose ps -q sdmo-app))
+             if [ "$STATUS" == '"healthy"' ]; then
+               echo "Application is healthy!"
+               exit 0
+@@ -66,10 +66,10 @@ jobs:
+             sleep 2
+           done
+           echo "Application failed to become healthy in time!"
+-          docker-compose logs
++          docker compose logs
+           exit 1
+ 
+       - name: Tear Down Stack
+         if: always()
+         run: |
+-          docker-compose down
++          docker compose down

@@ -1,0 +1,81 @@
+commit bdc6a758539b40fefe6503d50b74fec3b5872d0f
+Author: g3l0 <angelo.rubino@mail.polimi.it>
+Date:   Tue Sep 29 13:43:25 2026 +0300
+
+    Fixed Docker Volumes
+
+diff --git a/.gitignore b/.gitignore
+index dcad2b6..45d8690 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -23,4 +23,7 @@ baseline_metrics.txt
+ 
+ # Databases
+ *.db
+-*.sqlite3
+\ No newline at end of file
++*.sqlite3
++
++# Output Data
++Output_Components/
+\ No newline at end of file
+diff --git a/Documentation/Archive/Critical Evaluation and Maintenance.odt b/Documentation/Archive/Critical Evaluation and Maintenance.odt
+index 236bcc8..9b4f9a3 100644
+Binary files a/Documentation/Archive/Critical Evaluation and Maintenance.odt and b/Documentation/Archive/Critical Evaluation and Maintenance.odt differ
+diff --git a/Documentation/Archive/Diagrams/container_interaction.puml b/Documentation/Archive/Diagrams/container_interaction.puml
+new file mode 100644
+index 0000000..e38973f
+--- /dev/null
++++ b/Documentation/Archive/Diagrams/container_interaction.puml
+@@ -0,0 +1,37 @@
++@startuml
++skinparam componentStyle rectangle
++skinparam handwritten false
++skinparam backgroundColor #FFFFFF
++
++actor "User Browser" as User
++
++
++
++
++
++        
++        node "Container: sdmo-app" {
++            component "Python Daemon (Port 8000)" as App
++            component "Sensor Thread" as Sensor
++            component "Gateway Thread" as Gateway
++            component "Cloud Thread" as Cloud
++            
++            Sensor -> Gateway : Telemetry
++            Gateway -> Cloud : Encrypted Data
++            Cloud .> App : Updates Metrics
++        }
++        
++        node "Container: prometheus" {
++            component "Prometheus Server (Port 9090)" as Prom
++            database "Prometheus DB" as DB
++            
++            Prom -> DB : Stores Metrics
++        }
++        
++        Prom --> App : HTTP GET /metrics\n(Scrape every 5s)
++
++
++
++User --> Prom : HTTP GET localhost:9090\n(View Dashboard)
++
++@enduml
+\ No newline at end of file
+diff --git a/docker-compose.yml b/docker-compose.yml
+index c226cff..1f77b45 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -9,6 +9,8 @@ services:
+       timeout: 5s
+       retries: 3
+       start_period: 5s
++    volumes:
++      - ./Output_Components:/app/src/Output_Components
+ 
+   prometheus:
+     image: prom/prometheus:latest
