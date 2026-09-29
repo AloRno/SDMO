@@ -24,3 +24,6 @@ baseline_metrics.txt
 # Databases
 *.db
 *.sqlite3
+
+# Output Data
+Output_Components/
