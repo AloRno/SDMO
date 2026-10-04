@@ -1,5 +1,5 @@
 pytest
 pytest-cov
 cryptography
-mlkem
+mlkem==0.0.3
 prometheus-client
