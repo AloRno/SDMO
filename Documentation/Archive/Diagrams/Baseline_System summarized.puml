@@ -1,0 +1,13 @@
+@startuml
+mainframe Summarized Baseline System
+
+class LegacyDevice 
+
+class EdgeGateway 
+
+class CloudService 
+
+LegacyDevice  -->  EdgeGateway : encrypted data
+EdgeGateway  -->  CloudService : re-encrypted data 
+
+@enduml
