@@ -12,6 +12,7 @@ SDMO/Notes
 env/
 venv/
 ENV/
+.agents
 
 # Testing
 .coverage
@@ -27,3 +28,4 @@ baseline_metrics.txt
 
 # Output Data
 Output_Components/
+Output_Components_docker/
