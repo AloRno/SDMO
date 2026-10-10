@@ -20,9 +20,9 @@ prom_errors = Counter("sdmo_errors_total", "Total system alarms triggered")
 
 def device_thread(device, stop_event):
     while not stop_event.is_set():
-        raw_data = device.generateData(failure_probability=0.0)
+        raw_data = device.generateData(failure_probability=0.05)
         encrypted_cbc = device.encryptData(raw_data)
-        device.sendEncryptedData(encrypted_cbc, corruption_probability=0.0)
+        device.sendEncryptedData(encrypted_cbc, corruption_probability=0.05)
         time.sleep(1.5)
 
 def gateway_thread(gateway, device, cloud, stop_event):

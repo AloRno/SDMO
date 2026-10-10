@@ -32,7 +32,7 @@ COPY src/       ./src/
 COPY tests/     ./tests/
 
 # Pre-create output directories so the app doesn't need to mkdir at runtime
-RUN mkdir -p Output_Components/gateway Output_Components/cloud
+RUN mkdir -p Output_Components/gateway
 
 # The source files import each other by name (e.g. from legacy_device import ...),
 # so the working directory must be src/ when running main.py

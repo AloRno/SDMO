@@ -1,0 +1,167 @@
+diff --git a/Dockerfile b/Dockerfile
+index 33534b3..e039f05 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -32,7 +32,7 @@ COPY src/       ./src/
+ COPY tests/     ./tests/
+ 
+ # Pre-create output directories so the app doesn't need to mkdir at runtime
+-RUN mkdir -p Output_Components/gateway Output_Components/cloud
++RUN mkdir -p Output_Components/gateway
+ 
+ # The source files import each other by name (e.g. from legacy_device import ...),
+ # so the working directory must be src/ when running main.py
+diff --git a/docker-compose.yml b/docker-compose.yml
+index 1f77b45..c226cff 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -9,8 +9,6 @@ services:
+       timeout: 5s
+       retries: 3
+       start_period: 5s
+-    volumes:
+-      - ./Output_Components:/app/src/Output_Components
+ 
+   prometheus:
+     image: prom/prometheus:latest
+diff --git a/src/cloud_service.py b/src/cloud_service.py
+index 9ad3925..c8b7941 100644
+--- a/src/cloud_service.py
++++ b/src/cloud_service.py
+@@ -3,7 +3,6 @@ import hashlib
+ import random
+ import zlib
+ import time
+-import sqlite3
+ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+ from cryptography.hazmat.backends import default_backend
+ from cryptography.hazmat.primitives import padding
+@@ -27,49 +26,7 @@ class CloudService:
+         # Deadman's switch / Heartbeat property
+         self.last_healthy_reading_time = time.time()
+         
+-        # SQLite Database storage
+-        self.db_path = db_path
+-        self._init_db()
+ 
+-    def _init_db(self):
+-        """Initializes the SQLite database table for storing messages."""
+-        if self.db_path != ":memory:" and os.path.dirname(self.db_path):
+-            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+-        conn = sqlite3.connect(self.db_path)
+-        try:
+-            with conn:
+-                cursor = conn.cursor()
+-                cursor.execute("""
+-                    CREATE TABLE IF NOT EXISTS messages (
+-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+-                        temperature REAL,
+-                        timestamp INTEGER,
+-                        raw_message TEXT,
+-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-                    )
+-                """)
+-        finally:
+-            conn.close()
+-
+-    def save_message(self, temperature: float, timestamp: int, raw_message: str) -> bool:
+-        """
+-        Saves a validated message to the SQLite database.
+-        """
+-        try:
+-            conn = sqlite3.connect(self.db_path)
+-            try:
+-                with conn:
+-                    cursor = conn.cursor()
+-                    cursor.execute(
+-                        "INSERT INTO messages (temperature, timestamp, raw_message) VALUES (?, ?, ?)",
+-                        (temperature, timestamp, raw_message)
+-                    )
+-            finally:
+-                conn.close()
+-            return True
+-        except Exception as e:
+-            print(f"[CloudService] ❌ Failed to save message to SQLite database: {e}")
+-            return False
+ 
+     def negotiate_session(self, gateway_dh_pub: int, gateway_mlkem_ek: bytes) -> tuple[int, bytes]:
+         """
+@@ -145,8 +102,6 @@ class CloudService:
+             timestamp = int(parts[1])
+             
+             self.last_healthy_reading_time = time.time()
+-            #Saving the entry to the SQLite DB
+-            self.save_message(temperature, timestamp, expected_plaintext)
+             return expected_plaintext
+             
+         except Exception as e:
+diff --git a/tests/test_database.py b/tests/test_database.py
+deleted file mode 100644
+index 114080b..0000000
+--- a/tests/test_database.py
++++ /dev/null
+@@ -1,63 +0,0 @@
+-import pytest
+-import time
+-import sys
+-import os
+-
+-# Add src to the path
+-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
+-
+-from legacy_device import LegacyDevice
+-from edge_gateway import EdgeGateway
+-from cloud_service import CloudService
+-
+-def test_cloud_database_persistence():
+-    """
+-    Verify that valid telemetry messages processed by the CloudService
+-    are successfully stored in the SQLite database with correct schema and types.
+-    """
+-    import sqlite3
+-    test_db = "tests/test_messages.db"
+-    if os.path.exists(test_db):
+-        os.remove(test_db)
+-        
+-    try:
+-        cloud = CloudService(db_path=test_db)
+-        
+-        # 1. Direct save_message testing
+-        assert cloud.save_message(23.5, 1726759200, "23.5|1726759200") is True
+-        
+-        # 2. Verify record in SQLite table
+-        conn = sqlite3.connect(test_db)
+-        try:
+-            cursor = conn.cursor()
+-            cursor.execute("SELECT id, temperature, timestamp, raw_message FROM messages")
+-            rows = cursor.fetchall()
+-            assert len(rows) == 1
+-            assert rows[0][1] == 23.5
+-            assert rows[0][2] == 1726759200
+-            assert rows[0][3] == "23.5|1726759200"
+-        finally:
+-            conn.close()
+-            
+-        # 3. Verify processData() end-to-end persists healthy data
+-        gateway = EdgeGateway()
+-        gateway.negotiateSession(cloud)
+-        
+-        payload = "18.2|1726759210"
+-        encrypted = gateway.reEncryptData(payload)
+-        cloud.receiveData(encrypted)
+-        result = cloud.processData()
+-        assert result == payload
+-        
+-        conn = sqlite3.connect(test_db)
+-        try:
+-            cursor = conn.cursor()
+-            cursor.execute("SELECT temperature, timestamp, raw_message FROM messages ORDER BY id DESC LIMIT 1")
+-            last_row = cursor.fetchone()
+-            assert last_row == (18.2, 1726759210, "18.2|1726759210")
+-        finally:
+-            conn.close()
+-            
+-    finally:
+-        if os.path.exists(test_db):
+-            os.remove(test_db)
+\ No newline at end of file

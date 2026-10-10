@@ -3,7 +3,6 @@ import hashlib
 import random
 import zlib
 import time
-import sqlite3
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
@@ -27,49 +26,7 @@ class CloudService:
         # Deadman's switch / Heartbeat property
         self.last_healthy_reading_time = time.time()
         
-        # SQLite Database storage
-        self.db_path = db_path
-        self._init_db()
 
-    def _init_db(self):
-        """Initializes the SQLite database table for storing messages."""
-        if self.db_path != ":memory:" and os.path.dirname(self.db_path):
-            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        conn = sqlite3.connect(self.db_path)
-        try:
-            with conn:
-                cursor = conn.cursor()
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS messages (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        temperature REAL,
-                        timestamp INTEGER,
-                        raw_message TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                """)
-        finally:
-            conn.close()
-
-    def save_message(self, temperature: float, timestamp: int, raw_message: str) -> bool:
-        """
-        Saves a validated message to the SQLite database.
-        """
-        try:
-            conn = sqlite3.connect(self.db_path)
-            try:
-                with conn:
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        "INSERT INTO messages (temperature, timestamp, raw_message) VALUES (?, ?, ?)",
-                        (temperature, timestamp, raw_message)
-                    )
-            finally:
-                conn.close()
-            return True
-        except Exception as e:
-            print(f"[CloudService] ❌ Failed to save message to SQLite database: {e}")
-            return False
 
     def negotiate_session(self, gateway_dh_pub: int, gateway_mlkem_ek: bytes) -> tuple[int, bytes]:
         """
@@ -145,8 +102,6 @@ class CloudService:
             timestamp = int(parts[1])
             
             self.last_healthy_reading_time = time.time()
-            #Saving the entry to the SQLite DB
-            self.save_message(temperature, timestamp, expected_plaintext)
             return expected_plaintext
             
         except Exception as e:
