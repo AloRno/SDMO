@@ -43,7 +43,7 @@ The system will automatically negotiate the post-quantum session and begin silen
 
 To shut the system down:
 ```bash
-sudo docker compose up down
+sudo docker compose down
 ```
 ---
 
