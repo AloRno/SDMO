@@ -7,11 +7,11 @@
 
 * CI/CD --> [.github/workflows/ci.yml](.github/workflows/ci.yml)
 
-* Deployment Configuration --> [Dockerfile](Dockerfile) and [docker-compose.yml](docker-compose.yml)
+* Deployment Configuration --> [Dockerfile](Dockerfile), [docker-compose.yml](docker-compose.yml), and [prometheus.yml](prometheus.yml)
 
 ## Part 2
 
-* Project Report --> [Documentation/Final/Project_Report.pdf](Documentation/Final/Project_Report.pdf)
+* Project Report --> [Documentation/Final/Project_Report_Cryptography_and_Mathematics.pdf](Documentation/Final/Project_Report_Cryptography_and_Mathematics.pdf)
 
 ---
 
@@ -62,6 +62,14 @@ To shut the system down:
 ```bash
 sudo docker compose down
 ```
+
+### Running the Automated Test Suite
+To execute the unit, integration, and post-quantum cryptography tests locally (with coverage metrics):
+```bash
+pip install -r requirements.txt
+pytest --cov=src tests/
+```
+
 ---
 
 ## Monitoring & Telemetry
@@ -87,9 +95,12 @@ To extract the Edge Gateway's live error log to your host machine, run:
 sudo docker cp sdmo-sdmo-app-1:/app/src/Output_Components/gateway/gateway_error.log ./gateway_error.log
 ```
 
+---
+
 ## Repository Structure
 
-* `/Documentation` — All formal project reports, delivery documents, and architectural diagrams.
-* `/AI_Conversation` - Logs of the conversation with the LLM.
-* `/src` — The core Python source code for the pipeline.
-* `/tests` — Automated test suite for regression and cryptography testing.
+* [`/Documentation/Final`](Documentation/Final/) — Formal project reports and technical documentation in PDF format.
+* [`/IA Conversation`](IA%20Conversation/) — Detailed logs of the conversations and prompts with the LLM across project phases.
+* [`/patches`](patches/) — Git patches documenting each incremental modernization, testing, and CI/CD intervention referenced in the technical documentation.
+* [`/src`](src/) — Core Python source code for the telemetry pipeline (`legacy_device.py`, `edge_gateway.py`, `cloud_service.py`, `main.py`).
+* [`/tests`](tests/) — Automated `pytest` suite for baseline regression, failure handling, and ML-KEM cryptography testing.
