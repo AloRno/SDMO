@@ -1,3 +1,20 @@
+# For Final Submission - Part 1 and Part 2
+
+## Part 1
+* Technical Documentation --> [Documentation/Final/Main_Documentation.pdf](Documentation/Final/Main_Documentation.pdf)
+
+* Source Code --> [/src](/src/)
+
+* CI/CD --> [.github/workflows/ci.yml](.github/workflows/ci.yml)
+
+* Deployment Configuration --> [Dockerfile](Dockerfile) and [docker-compose.yml](docker-compose.yml)
+
+## Part 2
+
+* Project Report --> [Documentation/Final/Project_Report.pdf](Documentation/Final/Project_Report.pdf)
+
+---
+
 # SDMO: Legacy System Modernization for PQC
 
 
@@ -58,7 +75,6 @@ Once the containers are running, you can monitor the live telemetry data using t
    - `sdmo_errors_total` (Counter)
 3. Select the **Graph** tab and choose a rolling window (e.g., *Last 5 minutes*) to watch the real-time data flow.
 
-*Note: You can also extract this data programmatically by querying the Prometheus HTTP API (`http://localhost:9090/api/v1/query`).*
 
 ---
 
@@ -71,31 +87,9 @@ To extract the Edge Gateway's live error log to your host machine, run:
 sudo docker cp sdmo-sdmo-app-1:/app/src/Output_Components/gateway/gateway_error.log ./gateway_error.log
 ```
 
----
-
-## Running the Test Suite
-
-If you want to run the automated test suite locally (which validates the hybrid cryptography, baseline metrics, and failure handling), you will need Python 3.12.
-
-1. Activate your virtual environment and install dependencies:
-   ```bash
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   ```
-2. Run the `pytest` suite (ensuring the `src/` directory is in your Python path):
-   ```bash
-   export PYTHONPATH=src && pytest tests/
-   ```
-
----
-
 ## Repository Structure
 
+* `/Documentation` — All formal project reports, delivery documents, and architectural diagrams.
+* `/AI_Conversation` - Logs of the conversation with the LLM.
 * `/src` — The core Python source code for the pipeline.
 * `/tests` — Automated test suite for regression and cryptography testing.
-* `/Documentation/Fina` — All formal project reports, delivery documents, and architectural diagrams.
-* `/SDMO` — Obsidian notebook containing project instructions and AI logs.
-
-## Final Reports
-[Main_Project_Documentation](Documentation/Final/Main_Documentation.pdf)
-[Report_ML_KEM](Documentation/Final/Project_Report.pdf)

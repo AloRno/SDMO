@@ -1,0 +1,1 @@
+Folder containing the detailed log of the conversation with the LLMs.
