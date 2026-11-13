@@ -1,7 +1,7 @@
 # For Final Submission - Part 1 and Part 2
 
 ## Part 1
-* Technical Documentation --> [Documentation/Final/Main_Documentation.pdf](Documentation/Final/Main_Documentation.pdf)
+* Technical Documentation --> [Documentation/Main_Documentation.pdf](/Documentation/Main_Documentation.pdf)
 
 * Source Code --> [/src](/src/)
 
@@ -11,7 +11,7 @@
 
 ## Part 2
 
-* Project Report --> [Documentation/Project_Report_Cryptography_and_Mathematics.pdf](Documentation/Final/Project_Report_Cryptography_and_Mathematics.pdf)
+* Project Report --> [Documentation/Project_Report_Cryptography_and_Mathematics.pdf](/Documentation/Final/Project_Report_Cryptography_and_Mathematics.pdf)
 
 ---
 
