@@ -11,7 +11,7 @@
 
 ## Part 2
 
-* Project Report --> [Documentation/Final/Project_Report_Cryptography_and_Mathematics.pdf](Documentation/Final/Project_Report_Cryptography_and_Mathematics.pdf)
+* Project Report --> [Documentation/Project_Report_Cryptography_and_Mathematics.pdf](Documentation/Final/Project_Report_Cryptography_and_Mathematics.pdf)
 
 ---
 
